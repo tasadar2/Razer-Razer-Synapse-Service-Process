@@ -99,7 +99,7 @@ namespace Synapse3.UserInteractive
 			_handle = SetWinEventHook(3, 3, IntPtr.Zero, _listener, 0, 0, SetWinEventHookFlags.WINEVENT_SKIPOWNPROCESS);
 			_foregroundTimer = new Timer();
 			_foregroundTimer.AutoReset = false;
-			_foregroundTimer.Interval = 2000.0;
+			_foregroundTimer.Interval = 10.0;
 			_foregroundTimer.Elapsed += _foregroundTimer_Elapsed;
 		}
 
@@ -158,12 +158,12 @@ namespace Synapse3.UserInteractive
 			{
 				if (bRetry)
 				{
-					ResetForegroundTimer(3000.0);
+					ResetForegroundTimer(500.0);
 				}
 			}
 		}
 
-		private void ResetForegroundTimer(double interval = 2000.0)
+		private void ResetForegroundTimer(double interval = 10.0)
 		{
 			_foregroundTimer?.Stop();
 			_foregroundTimer.Interval = interval;
