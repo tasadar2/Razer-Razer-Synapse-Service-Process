@@ -1,0 +1,76 @@
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+  <PropertyGroup>
+    <AssemblyName>Razer Synapse Service Process</AssemblyName>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+    <OutputType>WinExe</OutputType>
+    <UseWindowsForms>True</UseWindowsForms>
+    <TargetFramework>net45</TargetFramework>
+    <PlatformTarget>x86</PlatformTarget>
+    <RazerServicePath>$(ProgramData)\Razer\Synapse3\Service</RazerServicePath>
+    <RazerUserProcessPath>$(MSBuildProgramFiles32)\Razer\Synapse3\UserProcess</RazerUserProcessPath>
+  </PropertyGroup>
+  <PropertyGroup>
+    <LangVersion>Preview</LangVersion>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNet.SignalR.Client" Version="2.2.1" />
+    <PackageReference Include="protobuf-net" Version="2.0.0.480" />
+    <PackageReference Include="WebApiContrib.Formatting.ProtoBuf" Version="0.9.5" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Contract.Common">
+      <HintPath>$(RazerServicePath)\Bin\Contract.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="PresentationFramework" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="Contract.Audio.ApplicationStreams">
+      <HintPath>$(RazerServicePath)\Bin\Contract.Audio.ApplicationStreams.dll</HintPath>
+    </Reference>
+    <Reference Include="Synapse3.UserInteractive.DeviceDetection">
+      <HintPath>$(RazerUserProcessPath)\Synapse3.UserInteractive.DeviceDetection.dll</HintPath>
+    </Reference>
+    <Reference Include="Contract.Central">
+      <HintPath>$(RazerServicePath)\Bin\Contract.Central.dll</HintPath>
+    </Reference>
+    <Reference Include="RzCtl_ManagedWrapper">
+      <HintPath>$(RazerServicePath)\Lib\ManagedWrapper\RzCtl_ManagedWrapper.dll</HintPath>
+    </Reference>
+    <Reference Include="Contract.Monitor">
+      <HintPath>$(RazerServicePath)\Bin\Contract.Monitor.dll</HintPath>
+    </Reference>
+    <Reference Include="Common.DeviceCallbacks">
+      <HintPath>$(RazerServicePath)\Bin\Common.DeviceCallbacks.dll</HintPath>
+    </Reference>
+    <Reference Include="RSy3_AudioAppStreamsWrapper">
+      <HintPath>$(RazerServicePath)\Lib\AudioAppStreams\RSy3_AudioAppStreamsWrapper.dll</HintPath>
+    </Reference>
+    <Reference Include="Contract.Macro">
+      <HintPath>$(RazerServicePath)\Bin\Contract.Macro.dll</HintPath>
+    </Reference>
+    <Reference Include="Gma.System.MouseKeyHook">
+      <HintPath>$(RazerServicePath)\Lib\Macros.MouseKeyHook\Gma.System.MouseKeyHook.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualBasic" />
+    <Reference Include="System.Management" />
+    <Reference Include="System.ServiceProcess" />
+    <Reference Include="Common.Internal">
+      <HintPath>$(RazerServicePath)\Bin\Common.Internal.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Core" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="Synapse3.Macros.Common.Utilities">
+      <HintPath>$(RazerServicePath)\Lib\Macros.Common.Utilities\Synapse3.Macros.Common.Utilities.dll</HintPath>
+    </Reference>
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+</Project>
