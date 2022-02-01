@@ -52,7 +52,8 @@ namespace Synapse3.UserInteractive
             {
                 return false;
             }
-            if (new ServiceController(service).Status != ServiceControllerStatus.Running)
+            ServiceController serviceController2 = new ServiceController(service);
+            if (serviceController2.Status != ServiceControllerStatus.Running)
             {
                 return false;
             }

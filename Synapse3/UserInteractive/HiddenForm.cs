@@ -46,21 +46,20 @@ namespace Synapse3.UserInteractive
         public HiddenForm()
         {
             InitializeComponent();
+            base.FormBorderStyle = FormBorderStyle.FixedToolWindow;
+            base.Opacity = 0.0;
+            base.Visible = false;
+            base.ShowInTaskbar = false;
+            base.ShowIcon = false;
             if (System.Windows.Application.Current == null)
             {
                 new System.Windows.Application().ShutdownMode = ShutdownMode.OnExplicitShutdown;
             }
         }
 
-        protected override void OnLoad(EventArgs e)
-        {
-            base.Visible = false;
-            base.Opacity = 0.0;
-            base.OnLoad(e);
-        }
-
         private async void HiddenForm_Load(object sender, EventArgs e)
         {
+            Size = new System.Drawing.Size(0, 0);
             _deviceEventsClient = new DeviceEventsClient();
             _deviceDetectionClient = new DeviceDetectionClient();
             _accounts = new AccountsClient();

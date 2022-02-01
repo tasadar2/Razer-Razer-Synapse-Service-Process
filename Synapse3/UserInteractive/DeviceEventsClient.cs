@@ -38,6 +38,10 @@ namespace Synapse3.UserInteractive
 
         public event OnMonitorSettingsChangedDisplayMode OnMonitorSettingsChangedDisplayModeEvent;
 
+        public event OnMonitorSettingsChangedTHXMode OnMonitorSettingsChangedTHXModeEvent;
+
+        public event OnMonitorSettingsChangedColorGamut OnMonitorSettingsChangedColorGamutEvent;
+
         public event OnMonitorSettingsChangedFreeSync OnMonitorSettingsChangedFreeSyncEvent;
 
         public event OnMonitorSettingsFetchedFreeSync OnMonitorSettingsFetchedFreeSyncEvent;
@@ -71,6 +75,20 @@ namespace Synapse3.UserInteractive
         public event OnMonitorSettingsChangedGamma OnMonitorSettingsChangedGammaEvent;
 
         public event OnMonitorSettingsChangedDeviceMode OnMonitorSettingsChangedDeviceModeEvent;
+
+        public event OnMonitorSettingsChangedWindowsHDR OnMonitorSettingsChangedWindowsHDREvent;
+
+        public event OnMonitorSettingsFetchedWindowsHDR OnMonitorSettingsFetchedWindowsHDREvent;
+
+        public event OnMonitorSettingsChangedICCProfiles OnMonitorSettingsChangedICCProfilesEvent;
+
+        public event OnMonitorSettingsFetchedICCProfiles OnMonitorSettingsFetchedICCProfilesEvent;
+
+        public event OnMonitorSettingsChangedRefreshRate OnMonitorSettingsChangedRefreshRateEvent;
+
+        public event OnMonitorSettingsFetchedRefreshRate OnMonitorSettingsFetchedRefreshRateEvent;
+
+        public event OnMonitorSettingsFetchedFWVersion OnMonitorSettingsFetchedFWVersionEvent;
 
         public DeviceEventsClient()
         {
@@ -134,6 +152,14 @@ namespace Synapse3.UserInteractive
             _hubProx.On("OnMonitorSettingsChangedDisplayMode", delegate(MonitorDisplayMode displayMode)
             {
                 this.OnMonitorSettingsChangedDisplayModeEvent?.Invoke(displayMode);
+            });
+            _hubProx.On("OnMonitorSettingsChangedTHXMode", delegate(MonitorTHXMode thxMode)
+            {
+                this.OnMonitorSettingsChangedTHXModeEvent?.Invoke(thxMode);
+            });
+            _hubProx.On("OnMonitorSettingsChangedColorGamut", delegate(MonitorColorGamut colorGamut)
+            {
+                this.OnMonitorSettingsChangedColorGamutEvent?.Invoke(colorGamut);
             });
             _hubProx.On("OnMonitorSettingsChangedFreeSync", delegate(MonitorFreeSync freeSync)
             {
@@ -203,9 +229,37 @@ namespace Synapse3.UserInteractive
             {
                 this.OnMonitorSettingsChangedDeviceModeEvent?.Invoke(devicemode);
             });
+            _hubProx.On("OnMonitorSettingsChangedICCProfiles", delegate(MonitorICCProfiles iccProfiles)
+            {
+                this.OnMonitorSettingsChangedICCProfilesEvent?.Invoke(iccProfiles);
+            });
+            _hubProx.On("OnMonitorSettingsFetchedICCProfiles", delegate(MonitorICCProfiles iccProfiles)
+            {
+                this.OnMonitorSettingsFetchedICCProfilesEvent?.Invoke(iccProfiles);
+            });
+            _hubProx.On("OnMonitorSettingsChangedRefreshRate", delegate(Contract.MonitorLib.MonitorRefreshRate refreshRate)
+            {
+                this.OnMonitorSettingsChangedRefreshRateEvent?.Invoke(refreshRate);
+            });
+            _hubProx.On("OnMonitorSettingsFetchedRefreshRate", delegate(Contract.MonitorLib.MonitorRefreshRate refreshRate)
+            {
+                this.OnMonitorSettingsFetchedRefreshRateEvent?.Invoke(refreshRate);
+            });
+            _hubProx.On("OnMonitorSettingsChangedWindowsHDR", delegate(MonitorWindowsHDR windowshdr)
+            {
+                this.OnMonitorSettingsChangedWindowsHDREvent?.Invoke(windowshdr);
+            });
+            _hubProx.On("OnMonitorSettingsFetchedWindowsHDR", delegate(MonitorWindowsHDR windowshdr)
+            {
+                this.OnMonitorSettingsFetchedWindowsHDREvent?.Invoke(windowshdr);
+            });
             _hubProx.On("OnMessage", delegate(string msg)
             {
                 this.OnMessageEvent?.Invoke(msg);
+            });
+            _hubProx.On("OnMonitorSettingsFetchedFWVersion", delegate(MonitorDeviceInfo deviceInfo)
+            {
+                this.OnMonitorSettingsFetchedFWVersionEvent?.Invoke(deviceInfo);
             });
             try
             {
@@ -213,7 +267,7 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception ex)
             {
-                Trace.TraceError("InitConnection: " + ex?.Message);
+                Trace.TraceError($"InitConnection: {ex?.Message}");
             }
             if (_hub.Connection.State == ConnectionState.Connected)
             {
@@ -292,6 +346,20 @@ namespace Synapse3.UserInteractive
             }
         }
 
+        public void Response(MonitorWindowsHDR item)
+        {
+            try
+            {
+                if (_hubProx != null && _hub != null && _hub.Connection.State == ConnectionState.Connected)
+                {
+                    _hubProx.Invoke("ResponseMonitorWindowsHDR", item);
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
         public void Response(MonitorInputSource item)
         {
             try
@@ -313,6 +381,62 @@ namespace Synapse3.UserInteractive
                 if (_hubProx != null && _hub != null && _hub.Connection.State == ConnectionState.Connected)
                 {
                     _hubProx.Invoke("ResponseMonitorInputAutoSwitch", item);
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        public void Response(MonitorICCProfiles item)
+        {
+            try
+            {
+                if (_hubProx != null && _hub != null && _hub.Connection.State == ConnectionState.Connected)
+                {
+                    _hubProx.Invoke("ResponseMonitorICCProfiles", item);
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        public void Response(Contract.MonitorLib.MonitorRefreshRate item)
+        {
+            try
+            {
+                if (_hubProx != null && _hub != null && _hub.Connection.State == ConnectionState.Connected)
+                {
+                    _hubProx.Invoke("ResponseMonitorRefreshRate", item);
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        public void Response(MonitorDeviceInfo item)
+        {
+            try
+            {
+                if (_hubProx != null && _hub != null && _hub.Connection.State == ConnectionState.Connected)
+                {
+                    _hubProx.Invoke("ResponseMonitorDeviceInfo", item);
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        public void MonitorSettingsChangedCallback(Device device, int message, int param)
+        {
+            try
+            {
+                if (_hubProx != null && _hub != null && _hub.Connection.State == ConnectionState.Connected)
+                {
+                    _hubProx.Invoke("OnMonitorSettingsChanged", device, message, param);
                 }
             }
             catch (Exception)

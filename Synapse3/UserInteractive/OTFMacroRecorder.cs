@@ -1,3 +1,4 @@
+#define TRACE
 using System;
 using System.Diagnostics;
 using System.Windows.Forms;
@@ -24,7 +25,7 @@ namespace Synapse3.UserInteractive
 
         public void Start()
         {
-            string name = "New Macro (" + DateTime.Now.ToShortTimeString() + ")";
+            string name = $"New Macro ({DateTime.Now.ToShortTimeString()})";
             _tempMacro = new Macro
             {
                 Guid = Guid.NewGuid(),
@@ -33,11 +34,21 @@ namespace Synapse3.UserInteractive
             _stopWatch = new Stopwatch();
             IsDone = false;
             _lastPressedKey = Keys.None;
+            Trace.TraceInformation("GlobalHook initialization - start");
+            if (_globalHook != null)
+            {
+                _globalHook.KeyDownExt -= GlobalHook_KeyDownExt;
+                _globalHook.KeyUpExt -= GlobalHook_KeyUpExt;
+                _globalHook.MouseDown -= GlobalHook_MouseDown;
+                _globalHook.MouseUp -= GlobalHook_MouseUp;
+                _globalHook.Dispose();
+            }
             _globalHook = Hook.GlobalEvents();
             _globalHook.KeyDownExt += GlobalHook_KeyDownExt;
             _globalHook.KeyUpExt += GlobalHook_KeyUpExt;
             _globalHook.MouseDown += GlobalHook_MouseDown;
             _globalHook.MouseUp += GlobalHook_MouseUp;
+            Trace.TraceInformation("GlobalHook initialization - done");
         }
 
         public void Stop(bool isCancelled)
@@ -49,6 +60,7 @@ namespace Synapse3.UserInteractive
             _globalHook.Dispose();
             if (isCancelled)
             {
+                Trace.TraceInformation("Macro Recording is cancelled. Clearing all temp macros");
                 _tempMacro = null;
             }
             IsDone = true;

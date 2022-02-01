@@ -44,10 +44,12 @@ namespace Synapse3.UserInteractive
 
         private void _oftMacroRecorderEvent_StopOTFEvent(Device device, ref Macro macro)
         {
+            Trace.TraceInformation("_oftMacroRecorderEvent_StopOTFEvent - start");
             _backgroundWorker.CancelAsync();
             _recorder.ActiveDevice = device;
             bool flag = SpinWait.SpinUntil(() => _recorder.IsDone, -1);
             macro = (flag ? _recorder.GetMacro() : null);
+            Trace.TraceInformation($"_oftMacroRecorderEvent_StopOTFEvent result: {flag}  - end");
         }
 
         private void _oftMacroRecorderEvent_CancelOTFEvent(Device device)

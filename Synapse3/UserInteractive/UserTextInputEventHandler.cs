@@ -1,7 +1,8 @@
 #define TRACE
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
@@ -12,9 +13,9 @@ namespace Synapse3.UserInteractive
     {
         private IUserTextEvent _userTextEvent;
 
-        private string previous = string.Empty;
+        private static ConcurrentBag<string> _userTexts;
 
-        private List<string> _userTexts;
+        private readonly object _lock = new object();
 
         private const int WM_PASTE = 770;
 
@@ -22,7 +23,7 @@ namespace Synapse3.UserInteractive
         {
             _userTextEvent = userTextEvent;
             _userTextEvent.OnUserTextInputEvent += _userTextEvent_OnUserTextInputEvent;
-            _userTexts = new List<string>();
+            _userTexts = new ConcurrentBag<string>();
         }
 
         private void _userTextEvent_OnUserTextInputEvent(string text)
@@ -31,75 +32,69 @@ namespace Synapse3.UserInteractive
             {
                 return;
             }
-            List<string> userTexts = _userTexts;
+            ConcurrentBag<string> userTexts = _userTexts;
             if (userTexts != null && !userTexts.Contains(text))
             {
                 _userTexts?.Add(text);
             }
             try
             {
-                string clip = string.Empty;
-                Thread thread = new Thread((ThreadStart)delegate
+                lock (_lock)
                 {
-                    clip = GetTextThreadProc();
-                });
-                thread.SetApartmentState(ApartmentState.STA);
-                thread.Start();
-                thread.Join();
-                List<string> userTexts2 = _userTexts;
-                if ((userTexts2 != null && !userTexts2.Contains(clip)) || clip.Equals(text))
-                {
-                    previous = clip;
+                    Thread thread = new Thread((ThreadStart)delegate
+                    {
+                        SwapExecute(text);
+                    });
+                    thread.SetApartmentState(ApartmentState.STA);
+                    thread.Start();
+                    thread.Join();
                 }
-                Thread thread2 = new Thread((ThreadStart)delegate
-                {
-                    SetTextThreadProc(text);
-                });
-                thread2.SetApartmentState(ApartmentState.STA);
-                thread2.Start();
-                thread2.Join();
-                SendKeys.SendWait("^v");
             }
             catch (Exception arg)
             {
                 Trace.TraceError($"Exception occured. {arg}");
             }
-            finally
+        }
+
+        private static void SwapExecute(string text)
+        {
+            string text2 = string.Empty;
+            string text3 = string.Empty;
+            try
             {
-                try
+                if (Clipboard.ContainsText())
                 {
-                    Thread.Sleep(100);
-                    if (previous != string.Empty)
+                    while (string.IsNullOrEmpty(text3))
                     {
-                        Thread thread3 = new Thread((ThreadStart)delegate
-                        {
-                            SetTextThreadProc(previous);
-                        });
-                        thread3.SetApartmentState(ApartmentState.STA);
-                        thread3.Start();
-                        thread3.Join();
-                    }
-                    else
-                    {
-                        Thread thread4 = new Thread((ThreadStart)delegate
-                        {
-                            ClearThreadProc();
-                        });
-                        thread4.SetApartmentState(ApartmentState.STA);
-                        thread4.Start();
-                        thread4.Join();
+                        text3 = Clipboard.GetText();
+                        Thread.Sleep(1);
                     }
                 }
-                catch (Exception arg2)
+                ConcurrentBag<string> userTexts = _userTexts;
+                if ((userTexts != null && !userTexts.Contains(text3)) || text3.Equals(text))
                 {
-                    Trace.TraceError($"Exception occured. {arg2}");
+                    text2 = string.Copy(text3);
                 }
+                Clipboard.SetText(text);
+                SendKeys.SendWait("^v");
+                if (!string.IsNullOrEmpty(text2))
+                {
+                    Clipboard.SetText(text2);
+                }
+                else
+                {
+                    Clipboard.Clear();
+                }
+            }
+            catch (Exception arg)
+            {
+                Trace.TraceError($"Swap: Exception occured. {arg}");
             }
         }
 
         private string GetTextThreadProc()
         {
-            _ = string.Empty;
+            string empty = string.Empty;
             try
             {
                 return Clipboard.GetText();

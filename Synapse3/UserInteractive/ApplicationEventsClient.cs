@@ -112,7 +112,7 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception ex)
             {
-                Trace.TraceError("InitConnection: " + ex?.Message);
+                Trace.TraceError($"InitConnection: {ex?.Message}");
             }
             if (_hub.Connection.State == ConnectionState.Connected)
             {
@@ -292,6 +292,7 @@ namespace Synapse3.UserInteractive
                     this.StopOTFEvent?.Invoke(device, ref macro);
                     try
                     {
+                        Trace.TraceInformation($"OnOTFMacroStopped: Macro data count {macro.MacroEvents.Count}");
                         _hubProx?.Invoke("OnOTFMacroStopped", device2, macro);
                     }
                     catch (Exception arg)

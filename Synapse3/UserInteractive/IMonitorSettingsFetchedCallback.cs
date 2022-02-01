@@ -16,6 +16,14 @@ namespace Synapse3.UserInteractive
 
         event OnMonitorSettingsFetchedInputAutoSwitch OnMonitorSettingsFetchedInputAutoSwitchEvent;
 
+        event OnMonitorSettingsFetchedICCProfiles OnMonitorSettingsFetchedICCProfilesEvent;
+
+        event OnMonitorSettingsFetchedRefreshRate OnMonitorSettingsFetchedRefreshRateEvent;
+
+        event OnMonitorSettingsFetchedWindowsHDR OnMonitorSettingsFetchedWindowsHDREvent;
+
+        event OnMonitorSettingsFetchedFWVersion OnMonitorSettingsFetchedFWVersionEvent;
+
         void Response(MonitorFreeSync item);
 
         void Response(MonitorPiPSettings item);
@@ -24,8 +32,16 @@ namespace Synapse3.UserInteractive
 
         void Response(MonitorHDR item);
 
+        void Response(MonitorWindowsHDR item);
+
         void Response(MonitorInputSource item);
 
         void Response(MonitorInputAutoSwitch item);
+
+        void Response(MonitorICCProfiles item);
+
+        void Response(Contract.MonitorLib.MonitorRefreshRate item);
+
+        void Response(MonitorDeviceInfo item);
     }
 }

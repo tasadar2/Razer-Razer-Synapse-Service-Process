@@ -47,14 +47,13 @@ namespace Synapse3.UserInteractive
                     array[0] = (int)(12 - value * 2);
                     array[1] = 0;
                     break;
-                case 6u:
-                case 7u:
-                case 8u:
-                case 9u:
-                case 10u:
-                    array[2] = 2;
-                    array[0] = 2;
-                    array[1] = (int)(12 - (value - 5) * 2) + array[0];
+                default:
+                    if ((int)value >= 6 && (int)value <= 10)
+                    {
+                        array[2] = 2;
+                        array[0] = 2;
+                        array[1] = (int)(12 - (value - 5) * 2) + array[0];
+                    }
                     break;
                 }
                 Marshal.Copy(array, 0, gCHandle.AddrOfPinnedObject(), array.Length);

@@ -135,7 +135,7 @@ namespace Synapse3.UserInteractive
                     uint ProcessId = 0u;
                     IntPtr threadWindowHandle = getThreadWindowHandle(0u);
                     GetWindowThreadProcessId(threadWindowHandle, out ProcessId);
-                    Process activeProcess = GetActiveProcess((int) ProcessId);
+                    Process activeProcess = GetActiveProcess((int)ProcessId);
                     string text = ProcessExecutablePath(activeProcess, foregroundWindow);
                     if (!string.IsNullOrEmpty(text) && !_active.Equals(text))
                     {
@@ -158,7 +158,7 @@ namespace Synapse3.UserInteractive
             {
                 if (bRetry)
                 {
-                    ResetForegroundTimer(500.0);
+                    ResetForegroundTimer();
                 }
             }
         }
@@ -190,7 +190,6 @@ namespace Synapse3.UserInteractive
                         {
                             return ProcessExecutablePath(realProcess, realProcess.MainWindowHandle);
                         }
-
                         text = GetTitle(hWnd);
                     }
                 }
@@ -198,18 +197,15 @@ namespace Synapse3.UserInteractive
                 {
                     text = GetTitle(hWnd);
                 }
-
                 if (string.IsNullOrEmpty(text))
                 {
                     text = QueryManagementObject(process, text);
                 }
-
                 if (string.IsNullOrEmpty(text))
                 {
                     text = process.ProcessName;
                 }
             }
-
             if (!string.IsNullOrEmpty(text))
             {
                 try
@@ -221,7 +217,6 @@ namespace Synapse3.UserInteractive
                     text = string.Empty;
                 }
             }
-
             _realProcess = null;
             return text;
         }
@@ -236,12 +231,11 @@ namespace Synapse3.UserInteractive
         {
             uint ProcessId = 0u;
             GetWindowThreadProcessId(hwnd, out ProcessId);
-            Process processById = Process.GetProcessById((int) ProcessId);
+            Process processById = Process.GetProcessById((int)ProcessId);
             if (processById.ProcessName != "ApplicationFrameHost")
             {
                 _realProcess = processById;
             }
-
             return true;
         }
 
@@ -260,7 +254,6 @@ namespace Synapse3.UserInteractive
                         name = obj2.ToString();
                     }
                 }
-
                 return name;
             }
             catch (Exception arg)
@@ -281,7 +274,6 @@ namespace Synapse3.UserInteractive
                 {
                     return stringBuilder.ToString();
                 }
-
                 return result;
             }
             catch (Exception arg)
@@ -294,14 +286,13 @@ namespace Synapse3.UserInteractive
         public static IntPtr getThreadWindowHandle(uint dwThreadId)
         {
             GUITHREADINFO lpgui = default(GUITHREADINFO);
-            lpgui.cbSize = Marshal.SizeOf((object) lpgui);
+            lpgui.cbSize = Marshal.SizeOf((object)lpgui);
             GetGUIThreadInfo(dwThreadId, ref lpgui);
             IntPtr intPtr = lpgui.hwndFocus;
             if (intPtr == IntPtr.Zero)
             {
                 intPtr = lpgui.hwndActive;
             }
-
             return intPtr;
         }
 

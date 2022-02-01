@@ -1,5 +1,4 @@
 #define TRACE
-using System.Collections.Generic;
 using System.Diagnostics;
 using Contract.Central;
 using Synapse3UserInteractiveDeviceDetection.UserInteractive.UserInteractiveDeviceDetectionWrapper;
@@ -15,8 +14,6 @@ namespace Synapse3.UserInteractive
         private readonly IDeviceDetection _deviceDetectionClient;
 
         private volatile bool _bStarted;
-
-        private List<uint> _supportedPIDS = new List<uint> { 3328u };
 
         public DeviceDetectionHandler(IAccountsClient accounts, IDeviceDetection deviceDetectionClient)
         {
@@ -68,20 +65,14 @@ namespace Synapse3.UserInteractive
 
         private void DeviceAddedUserInteractive(uint pid, uint eid, long handle)
         {
-            if (_supportedPIDS.Contains(pid))
-            {
-                Trace.TraceInformation($"DeviceDetectionHandler add sending {pid} {eid} {handle}");
-                _deviceDetectionClient?.SendDeviceAdded(pid, eid, handle);
-            }
+            Trace.TraceInformation($"DeviceDetectionHandler add sending {pid} {eid} {handle}");
+            _deviceDetectionClient?.SendDeviceAdded(pid, eid, handle);
         }
 
         private void DeviceRemovedUserInteractive(uint pid, uint eid, long handle)
         {
-            if (_supportedPIDS.Contains(pid))
-            {
-                Trace.TraceInformation($"DeviceDetectionHandler remove sending {pid} {eid} {handle}");
-                _deviceDetectionClient?.SendDeviceRemoved(pid, eid, handle);
-            }
+            Trace.TraceInformation($"DeviceDetectionHandler remove sending {pid} {eid} {handle}");
+            _deviceDetectionClient?.SendDeviceRemoved(pid, eid, handle);
         }
     }
 }

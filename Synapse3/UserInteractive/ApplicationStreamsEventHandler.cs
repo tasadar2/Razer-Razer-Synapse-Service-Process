@@ -34,6 +34,8 @@ namespace Synapse3.UserInteractive
 
         private readonly string VALORANT = "valorant";
 
+        private readonly List<string> FILTER = new List<string> { "chromavisualizer", "redlauncher" };
+
         private readonly ConcurrentDictionary<string, ApplicationStream> _applicationStreamWorkAround;
 
         public event OnAudioApplicationStreamsChanged AudioApplicationStreamsChangedEvent;
@@ -95,7 +97,8 @@ namespace Synapse3.UserInteractive
         {
             if (bAdd)
             {
-                if (_processedDeviceList.FindIndex((Device x) => x.Handle == device.Handle) < 0)
+                int num = _processedDeviceList.FindIndex((Device x) => x.Handle == device.Handle);
+                if (num < 0)
                 {
                     if (_audioAppStreamsResolver?.DeviceAdded(device) ?? false)
                     {
@@ -109,7 +112,7 @@ namespace Synapse3.UserInteractive
                     }
                     else
                     {
-                        Trace.TraceError("ProcessDevice::Failed to add " + device.Name + " in audioAppStreamsResolver.");
+                        Trace.TraceError($"ProcessDevice::Failed to add {device.Name} in audioAppStreamsResolver.");
                     }
                 }
                 else
@@ -137,13 +140,13 @@ namespace Synapse3.UserInteractive
 
         private void OnApplicationStreamsDeviceAdded(Device device)
         {
-            Trace.TraceInformation("OnApplicationStreamsDeviceAdded " + device.Name);
+            Trace.TraceInformation($"OnApplicationStreamsDeviceAdded {device.Name}");
             ProcessDevices(bAdd: true);
         }
 
         private void OnApplicationStreamsDeviceRemoved(Device device)
         {
-            Trace.TraceInformation("OnApplicationStreamsDeviceRemoved " + device.Name);
+            Trace.TraceInformation($"OnApplicationStreamsDeviceRemoved {device.Name}");
             ProcessDevices(bAdd: false);
             if (_cache.ContainsKey(device.Handle))
             {
@@ -153,7 +156,7 @@ namespace Synapse3.UserInteractive
 
         private void OnApplicationStreamsDeviceGetStreamsEvent(Device device)
         {
-            Trace.TraceInformation("OnApplicationStreamsDeviceGetStreamsEvent " + device.Name);
+            Trace.TraceInformation($"OnApplicationStreamsDeviceGetStreamsEvent {device.Name}");
             ProcessDevice(device, bAdd: true);
         }
 
@@ -177,7 +180,7 @@ namespace Synapse3.UserInteractive
             if (num >= 0)
             {
                 string arg = string.Join(Environment.NewLine, (IEnumerable<ApplicationStream>)streams.ApplicationStreamList.ToArray());
-                Trace.TraceInformation("OnApplicationStreamsSetEvent back-end set streams called " + arg + ".");
+                Trace.TraceInformation($"OnApplicationStreamsSetEvent back-end set streams called {arg}.");
                 _audioAppStreamsResolver?.Set(streams);
             }
             else
@@ -229,10 +232,11 @@ namespace Synapse3.UserInteractive
             {
                 stream.Name = "Razer Synapse Service";
                 stream.ExePath = ServicePath();
-                Trace.TraceInformation("OnApplicationStreamsSetEvent Setting Service Path " + stream.ExePath + " source:" + stream.Source + " ouput:" + stream.OutputMode);
+                Trace.TraceInformation($"OnApplicationStreamsSetEvent Setting Service Path {stream.ExePath} source:{stream.Source} ouput:{stream.OutputMode}");
             }
             Trace.TraceInformation($"OnApplicationStreamsSetEvent {device.Name} {stream.Name} id:{stream.StreamID} source:{stream.Source} ouput:{stream.OutputMode}");
-            if (_processedDeviceList.FindIndex((Device x) => x.Handle == device.Handle) >= 0)
+            int num = _processedDeviceList.FindIndex((Device x) => x.Handle == device.Handle);
+            if (num >= 0)
             {
                 CRSy3_AudioAppStreamsWrapper audioAppStreamsResolver = _audioAppStreamsResolver;
                 if (audioAppStreamsResolver != null && !audioAppStreamsResolver.SetApplicationStream(device, stream))
@@ -327,17 +331,24 @@ namespace Synapse3.UserInteractive
                 Trace.TraceError("UpdateApplicationStreams::Failed!");
             }
             streams.Device = device;
-            if (_cache.ContainsKey(streams.Device.Handle) && _cache[streams.Device.Handle].SequenceEqual(streams.ApplicationStreamList))
+            if (_cache.ContainsKey(streams.Device.Handle))
             {
-                Trace.TraceInformation("UpdateApplicationStreams:: stream list already sent.");
-                return;
+                List<ApplicationStream> first = _cache[streams.Device.Handle];
+                if (first.SequenceEqual(streams.ApplicationStreamList))
+                {
+                    Trace.TraceInformation("UpdateApplicationStreams:: stream list already sent.");
+                    return;
+                }
             }
             Trace.TraceInformation("UpdateApplicationStreams::Success!");
-            streams.ApplicationStreamList.RemoveAll((ApplicationStream x) => x.Name.ToLower().Contains("chromavisualizer"));
+            foreach (string item in FILTER)
+            {
+                streams.ApplicationStreamList.RemoveAll((ApplicationStream x) => x.Name.ToLower().Contains(item));
+            }
             ApplicationStream riotclientservices = streams.ApplicationStreamList.FirstOrDefault((ApplicationStream x) => x.ExePath.ToLower().Contains(RIOTCLIENTSERVICES));
             if (riotclientservices != null)
             {
-                Trace.TraceInformation("UpdateApplicationStreams:: " + RIOTCLIENTSERVICES + " found! Cloning.");
+                Trace.TraceInformation($"UpdateApplicationStreams:: {RIOTCLIENTSERVICES} found! Cloning.");
                 ApplicationStream applicationStream = Serializer.DeepClone(riotclientservices);
                 if (applicationStream != null)
                 {
@@ -346,7 +357,7 @@ namespace Synapse3.UserInteractive
             }
             streams.ApplicationStreamList.RemoveAll((ApplicationStream x) => x.ExePath.ToLower().Contains(RIOTCLIENTSERVICES));
             string arg = string.Join(", ", streams.ApplicationStreamList.Select((ApplicationStream x) => x.Name + " id:" + x.StreamID + " source:" + x.Source + " output:" + x.OutputMode + " path:" + x.ExePath));
-            Trace.TraceInformation("UpdateApplicationStreams::Sending " + arg);
+            Trace.TraceInformation($"UpdateApplicationStreams::Sending {arg}");
             if (_client.SetAppStream(streams))
             {
                 _cache[streams.Device.Handle] = streams.ApplicationStreamList;

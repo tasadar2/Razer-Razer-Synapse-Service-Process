@@ -2,7 +2,6 @@
 using System;
 using System.Configuration;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Threading;
 using System.Windows.Forms;
@@ -17,7 +16,8 @@ namespace Synapse3.UserInteractive
         [STAThread]
         private static void Main()
         {
-            string text = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), ConfigurationManager.AppSettings["log_filepath"]);
+            string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string text = Path.Combine(folderPath, ConfigurationManager.AppSettings["log_filepath"]);
             text = text + "_" + Environment.UserName + ".log";
             string directoryName = Path.GetDirectoryName(text);
             if (!Directory.Exists(directoryName))
@@ -48,14 +48,7 @@ namespace Synapse3.UserInteractive
             Trace.TraceInformation("****************************Starting Synapse3 UserInteractive Process****************************");
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(defaultValue: false);
-            Application.Run(new HiddenForm
-            {
-                FormBorderStyle = FormBorderStyle.FixedToolWindow,
-                ShowInTaskbar = false,
-                StartPosition = FormStartPosition.Manual,
-                Size = new Size(0, 0),
-                Location = new Point(SystemInformation.VirtualScreen.Width + 100, SystemInformation.VirtualScreen.Height + 100)
-            });
+            Application.Run(new HiddenForm());
             mutex.ReleaseMutex();
             Trace.TraceInformation("****************************Synapse3 UserInteractive Process Stopped****************************");
         }

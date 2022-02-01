@@ -23,7 +23,7 @@ namespace Synapse3.UserInteractive.Properties
             {
                 if (resourceMan == null)
                 {
-                    resourceMan = new ResourceManager("Synapse3.UserInteractive.Properties.Resources", typeof(Resources).Assembly);
+                    ResourceManager resourceManager = (resourceMan = new ResourceManager("Synapse3.UserInteractive.Properties.Resources", typeof(Resources).Assembly));
                 }
                 return resourceMan;
             }

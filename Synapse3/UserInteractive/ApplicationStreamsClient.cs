@@ -1,4 +1,7 @@
+#define TRACE
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.Http;
 using Contract.Audio.ApplicationStreamsLib;
 using Contract.Common;
@@ -17,42 +20,77 @@ namespace Synapse3.UserInteractive
 
         public List<Device> GetAppStreamDevices()
         {
-            string requestUri = "api/AudioApplicationStreams/getappstreamdevices";
-            HttpResponseMessage result = _http.Client.GetAsync(requestUri).Result;
-            if (result.IsSuccessStatusCode)
+            try
             {
-                return result.Content.ReadAsAsync<List<Device>>(new ProtoBufFormatter[1]
+                string requestUri = "api/AudioApplicationStreams/getappstreamdevices";
+                HttpResponseMessage result = _http.Client.GetAsync(requestUri).Result;
+                if (result.IsSuccessStatusCode)
                 {
-                    new ProtoBufFormatter()
-                }).Result;
+                    return result.Content.ReadAsAsync<List<Device>>(new ProtoBufFormatter[1]
+                    {
+                        new ProtoBufFormatter()
+                    }).Result;
+                }
+            }
+            catch (Exception arg)
+            {
+                Trace.TraceError($"GetAppStreamDevices: Exception occured: {arg}");
             }
             return null;
         }
 
         public bool SetAppStream(ApplicationStreams item)
         {
-            string requestUri = "api/AudioApplicationStreams/setappstreamsfromprocess";
-            HttpResponseMessage result = _http.Client.PostAsync(requestUri, item, new ProtoBufFormatter()).Result;
-            if (result.IsSuccessStatusCode)
+            try
             {
-                return result.Content.ReadAsAsync<bool>(new ProtoBufFormatter[1]
+                string requestUri = "api/AudioApplicationStreams/setappstreamsfromprocess";
+                HttpResponseMessage result = _http.Client.PostAsync(requestUri, item, new ProtoBufFormatter()).Result;
+                if (result.IsSuccessStatusCode)
                 {
-                    new ProtoBufFormatter()
-                }).Result;
+                    return result.Content.ReadAsAsync<bool>(new ProtoBufFormatter[1]
+                    {
+                        new ProtoBufFormatter()
+                    }).Result;
+                }
+            }
+            catch (AggregateException ex)
+            {
+                foreach (Exception innerException in ex.InnerExceptions)
+                {
+                    Trace.TraceError($"SetAppStream: AggregateException occured: {innerException}");
+                }
+            }
+            catch (Exception arg)
+            {
+                Trace.TraceError($"SetAppStream: Exception occured: {arg}");
             }
             return false;
         }
 
         public bool UpdateAppStream(long handle)
         {
-            string requestUri = "api/AudioApplicationStreams/putappstreamschanged/?handle=" + handle;
-            HttpResponseMessage result = _http.Client.PutAsync(requestUri, null).Result;
-            if (result.IsSuccessStatusCode)
+            try
             {
-                return result.Content.ReadAsAsync<bool>(new ProtoBufFormatter[1]
+                string requestUri = "api/AudioApplicationStreams/putappstreamschanged/?handle=" + handle;
+                HttpResponseMessage result = _http.Client.PutAsync(requestUri, null).Result;
+                if (result.IsSuccessStatusCode)
                 {
-                    new ProtoBufFormatter()
-                }).Result;
+                    return result.Content.ReadAsAsync<bool>(new ProtoBufFormatter[1]
+                    {
+                        new ProtoBufFormatter()
+                    }).Result;
+                }
+            }
+            catch (AggregateException ex)
+            {
+                foreach (Exception innerException in ex.InnerExceptions)
+                {
+                    Trace.TraceError($"SetAppStream: AggregateException occured: {innerException}");
+                }
+            }
+            catch (Exception arg)
+            {
+                Trace.TraceError($"UpdateAppStream: Exception occured: {arg}");
             }
             return false;
         }

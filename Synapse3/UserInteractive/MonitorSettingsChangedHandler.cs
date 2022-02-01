@@ -16,6 +16,8 @@ namespace Synapse3.UserInteractive
     {
         private Dictionary<long, RzCtl_ManagedWrapper> _wrappers;
 
+        private Dictionary<long, Device> _devices;
+
         private readonly IMonitorSettingsChangedCallback _monitorSettingsEvent;
 
         private readonly IMonitorSettingsFetchedCallback _monitorSettingsFetchEvent;
@@ -31,6 +33,7 @@ namespace Synapse3.UserInteractive
         public MonitorSettingsChangedHandler(IDeviceDetection deviceDetection, IMonitorSettingsChangedCallback monitorSettingsEvent, IMonitorSettingsFetchedCallback monitorSettingsFetchEvent, IWndProc wndProc)
         {
             _wrappers = new Dictionary<long, RzCtl_ManagedWrapper>();
+            _devices = new Dictionary<long, Device>();
             _wndProc = wndProc;
             _lock = new object();
             _deviceDetection = deviceDetection;
@@ -42,6 +45,8 @@ namespace Synapse3.UserInteractive
             _monitorSettingsEvent.OnMonitorSettingsChangedContrastEvent += OnMonitorSettingsChangedContrastEvent;
             _monitorSettingsEvent.OnMonitorSettingsChangedColorPresetEvent += OnMonitorSettingsChangedColorPresetEvent;
             _monitorSettingsEvent.OnMonitorSettingsChangedDisplayModeEvent += OnMonitorSettingsChangedDisplayModeEvent;
+            _monitorSettingsEvent.OnMonitorSettingsChangedTHXModeEvent += OnMonitorSettingsChangedTHXModeEvent;
+            _monitorSettingsEvent.OnMonitorSettingsChangedColorGamutEvent += OnMonitorSettingsChangedColorGamutEvent;
             _monitorSettingsEvent.OnMonitorSettingsChangedFreeSyncEvent += OnMonitorSettingsChangedFreeSyncEvent;
             _monitorSettingsEvent.OnMonitorSettingsChangedImageScalingEvent += OnMonitorSettingsChangedImageScalingEvent;
             _monitorSettingsEvent.OnMonitorSettingsChangedOverdriveEvent += OnMonitorSettingsChangedOverdriveEvent;
@@ -53,12 +58,19 @@ namespace Synapse3.UserInteractive
             _monitorSettingsEvent.OnMonitorSettingsChangedInputAutoSwitchEvent += OnMonitorSettingsChangedInputAutoSwitchEvent;
             _monitorSettingsEvent.OnMonitorSettingsChangedGammaEvent += OnMonitorSettingsChangedGammaEvent;
             _monitorSettingsEvent.OnMonitorSettingsChangedDeviceModeEvent += OnMonitorSettingsChangedDeviceModeEvent;
+            _monitorSettingsEvent.OnMonitorSettingsChangedWindowsHDREvent += OnMonitorSettingsChangedWindowsHDREvent;
+            _monitorSettingsEvent.OnMonitorSettingsChangedICCProfilesEvent += OnMonitorSettingsChangedICCProfilesEvent;
+            _monitorSettingsEvent.OnMonitorSettingsChangedRefreshRateEvent += OnMonitorSettingsChangedRefreshRateEvent;
             _monitorSettingsFetchEvent.OnMonitorSettingsFetchedFreeSyncEvent += OnMonitorSettingsFetchedFreeSyncEvent;
             _monitorSettingsFetchEvent.OnMonitorSettingsFetchedPiPSettingsEvent += OnMonitorSettingsFetchedPiPSettingsEvent;
             _monitorSettingsFetchEvent.OnMonitorSettingsFetchedFPSEvent += OnMonitorSettingsFetchedFPSEvent;
             _monitorSettingsFetchEvent.OnMonitorSettingsFetchedHDREvent += OnMonitorSettingsFetchedHDREvent;
             _monitorSettingsFetchEvent.OnMonitorSettingsFetchedInputSourceEvent += OnMonitorSettingsFetchedInputSourceEvent;
             _monitorSettingsFetchEvent.OnMonitorSettingsFetchedInputAutoSwitchEvent += OnMonitorSettingsFetchedInputAutoSwitchEvent;
+            _monitorSettingsFetchEvent.OnMonitorSettingsFetchedWindowsHDREvent += OnMonitorSettingsFetchedWindowsHDREvent;
+            _monitorSettingsFetchEvent.OnMonitorSettingsFetchedICCProfilesEvent += OnMonitorSettingsFetchedICCProfilesEvent;
+            _monitorSettingsFetchEvent.OnMonitorSettingsFetchedRefreshRateEvent += OnMonitorSettingsFetchedRefreshRateEvent;
+            _monitorSettingsFetchEvent.OnMonitorSettingsFetchedFWVersionEvent += OnMonitorSettingsFetchedFWVersionEvent;
             _wndProc.OnWndProcEvent += OnWndProcEvent;
             _refreshHandleTimer = new System.Timers.Timer();
             _refreshHandleTimer.AutoReset = false;
@@ -69,7 +81,8 @@ namespace Synapse3.UserInteractive
 
         private void SystemEvents_PowerModeChanged(object sender, PowerModeChangedEventArgs e)
         {
-            if (e.Mode != PowerModes.Suspend)
+            PowerModes mode = e.Mode;
+            if (mode != PowerModes.Suspend)
             {
                 return;
             }
@@ -86,6 +99,7 @@ namespace Synapse3.UserInteractive
                 }
                 Trace.TraceInformation("SystemEvents_PowerModeChanged: middleware wrappers cleared.");
                 _wrappers.Clear();
+                _devices.Clear();
             }
         }
 
@@ -99,12 +113,22 @@ namespace Synapse3.UserInteractive
         private void HandleRefreshHandler(object sender, ElapsedEventArgs e)
         {
             Trace.TraceInformation($"HandleRefreshHandler: Refreshing Handles count: {_wrappers.Count}");
-            lock (_lock)
+            try
             {
-                foreach (KeyValuePair<long, RzCtl_ManagedWrapper> wrapper in _wrappers)
+                lock (_lock)
                 {
-                    MWSetImpl(wrapper.Value, "Monitor_Reset", data: true);
+                    foreach (KeyValuePair<long, RzCtl_ManagedWrapper> wrapper in _wrappers)
+                    {
+                        if (wrapper.Value != null)
+                        {
+                            bool flag = MWSetImpl(wrapper.Value, "Monitor_Reset", data: true);
+                        }
+                    }
                 }
+            }
+            catch (Exception arg)
+            {
+                Trace.TraceError($"HandleRefreshHandler: Exception: {arg}");
             }
             Trace.TraceInformation("HandleRefreshHandler: Refresh done.");
         }
@@ -122,7 +146,7 @@ namespace Synapse3.UserInteractive
         {
             if (item.Type == 15)
             {
-                Wrapper(item);
+                RzCtl_ManagedWrapper rzCtl_ManagedWrapper = Wrapper(item);
             }
         }
 
@@ -130,7 +154,7 @@ namespace Synapse3.UserInteractive
         {
             if (item.Type == 15)
             {
-                Wrapper(item, bCleanUp: true);
+                RzCtl_ManagedWrapper rzCtl_ManagedWrapper = Wrapper(item, bCleanUp: true);
             }
         }
 
@@ -143,6 +167,10 @@ namespace Synapse3.UserInteractive
                 {
                     if (_wrappers.ContainsKey(device.Handle))
                     {
+                        if (_devices.ContainsKey(device.Handle))
+                        {
+                            _devices.Remove(device.Handle);
+                        }
                         _wrappers[device.Handle].Dispose();
                         _wrappers.Remove(device.Handle);
                         Trace.TraceInformation($"Wrapper: {device.Product_ID} removed from collection.");
@@ -154,6 +182,7 @@ namespace Synapse3.UserInteractive
                 if (!_wrappers.ContainsKey(device.Handle))
                 {
                     _wrappers[device.Handle] = new RzCtl_ManagedWrapper((ushort)device.Vendor_ID, (ushort)device.Product_ID, (ulong)device.Handle, Constants.RAZER_BIN + "\\Devices\\Mw\\");
+                    _devices[device.Handle] = device;
                     if (!_wrappers[device.Handle].Initialise())
                     {
                         _wrappers.Remove(device.Handle);
@@ -177,13 +206,19 @@ namespace Synapse3.UserInteractive
         private void OnMonitorSettingsChangedBrightnessEvent(MonitorBrightness item)
         {
             ulong data = item.Brightness;
-            MWSetImpl(Wrapper(item.Device), "Monitor_Brightness", data);
+            if (!MWSetImpl(Wrapper(item.Device), "Monitor_Brightness", data) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWSetImpl(Wrapper(item.Device), "Monitor_Brightness", data);
+            }
         }
 
         private void OnMonitorSettingsChangedContrastEvent(MonitorContrast item)
         {
             ulong data = item.Contrast;
-            MWSetImpl(Wrapper(item.Device), "Monitor_Contrast", data);
+            if (!MWSetImpl(Wrapper(item.Device), "Monitor_Contrast", data) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWSetImpl(Wrapper(item.Device), "Monitor_Contrast", data);
+            }
         }
 
         private void OnMonitorSettingsChangedColorPresetEvent(MonitorColorPreset item)
@@ -192,7 +227,10 @@ namespace Synapse3.UserInteractive
             {
                 mcMode mcMode = new mcMode();
                 mcMode.mode = (byte)item.Mode;
-                MWSetImpl(Wrapper(item.Device), "Monitor_ColorPreset", mcMode);
+                if (!MWSetImpl(Wrapper(item.Device), "Monitor_ColorPreset", mcMode) && RefreshMWWrapper(item.Device))
+                {
+                    bool flag = MWSetImpl(Wrapper(item.Device), "Monitor_ColorPreset", mcMode);
+                }
             }
             if (item.Mode == MonitorColorPresetMode.Custom)
             {
@@ -200,7 +238,10 @@ namespace Synapse3.UserInteractive
                 mcLedColor.color.red = item.VideoGain.Red;
                 mcLedColor.color.blue = item.VideoGain.Blue;
                 mcLedColor.color.green = item.VideoGain.Green;
-                MWSetImpl(Wrapper(item.Device), "Monitor_VideoGain", mcLedColor);
+                if (!MWSetImpl(Wrapper(item.Device), "Monitor_VideoGain", mcLedColor) && RefreshMWWrapper(item.Device))
+                {
+                    bool flag2 = MWSetImpl(Wrapper(item.Device), "Monitor_VideoGain", mcLedColor);
+                }
             }
         }
 
@@ -208,20 +249,49 @@ namespace Synapse3.UserInteractive
         {
             mcMode mcMode = new mcMode();
             mcMode.mode = (byte)item.Mode;
-            MWSetImpl(Wrapper(item.Device), "Monitor_DisplayMode", mcMode);
+            if (!MWSetImpl(Wrapper(item.Device), "Monitor_DisplayMode", mcMode) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWSetImpl(Wrapper(item.Device), "Monitor_DisplayMode", mcMode);
+            }
+        }
+
+        private void OnMonitorSettingsChangedTHXModeEvent(MonitorTHXMode item)
+        {
+            mcMode mcMode = new mcMode();
+            mcMode.mode = (byte)item.Mode;
+            if (!MWSetImpl(Wrapper(item.Device), "Monitor_THXMode", mcMode) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWSetImpl(Wrapper(item.Device), "Monitor_THXMode", mcMode);
+            }
+        }
+
+        private void OnMonitorSettingsChangedColorGamutEvent(MonitorColorGamut item)
+        {
+            mcMode mcMode = new mcMode();
+            mcMode.mode = (byte)item.Mode;
+            if (!MWSetImpl(Wrapper(item.Device), "Monitor_ColorGamut", mcMode) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWSetImpl(Wrapper(item.Device), "Monitor_ColorGamut", mcMode);
+            }
         }
 
         private void OnMonitorSettingsChangedFreeSyncEvent(MonitorFreeSync item)
         {
             mcMode mcMode = new mcMode();
             mcMode.mode = (byte)item.Mode;
-            MWSetImpl(Wrapper(item.Device), "Monitor_FreeSync", mcMode);
+            if (!MWSetImpl(Wrapper(item.Device), "Monitor_FreeSync", mcMode) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWSetImpl(Wrapper(item.Device), "Monitor_FreeSync", mcMode);
+            }
         }
 
         private void OnMonitorSettingsFetchedFreeSyncEvent(MonitorFreeSync item)
         {
             mcMode data = new mcMode();
-            MWGetImpl(Wrapper(item.Device), "Monitor_FreeSync", ref data);
+            if (!MWGetImpl(Wrapper(item.Device), "Monitor_FreeSync", ref data) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWGetImpl(Wrapper(item.Device), "Monitor_FreeSync", ref data);
+            }
             item.Mode = (MonitorFreeSyncMode)data.mode;
             _monitorSettingsFetchEvent.Response(item);
         }
@@ -230,14 +300,20 @@ namespace Synapse3.UserInteractive
         {
             mcMode mcMode = new mcMode();
             mcMode.mode = (byte)item.Mode;
-            MWSetImpl(Wrapper(item.Device), "Monitor_ImageScaling", mcMode);
+            if (!MWSetImpl(Wrapper(item.Device), "Monitor_ImageScaling", mcMode) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWSetImpl(Wrapper(item.Device), "Monitor_ImageScaling", mcMode);
+            }
         }
 
         private void OnMonitorSettingsChangedOverdriveEvent(MonitorOverdrive item)
         {
             mcMode mcMode = new mcMode();
             mcMode.mode = (byte)item.Mode;
-            MWSetImpl(Wrapper(item.Device), "Monitor_Overdrive", mcMode);
+            if (!MWSetImpl(Wrapper(item.Device), "Monitor_Overdrive", mcMode) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWSetImpl(Wrapper(item.Device), "Monitor_Overdrive", mcMode);
+            }
         }
 
         private void OnMonitorSettingsChangedPiPSettingsEvent(MonitorPiPSettings item)
@@ -246,41 +322,65 @@ namespace Synapse3.UserInteractive
             {
                 mcMode mcMode = new mcMode();
                 mcMode.mode = (byte)item.Mode;
-                MWSetImpl(Wrapper(item.Device), "Monitor_PiPMode", mcMode);
+                if (!MWSetImpl(Wrapper(item.Device), "Monitor_PiPMode", mcMode) && RefreshMWWrapper(item.Device))
+                {
+                    bool flag = MWSetImpl(Wrapper(item.Device), "Monitor_PiPMode", mcMode);
+                }
             }
             if (item.Source != MonitorPiPSource.Invalid)
             {
                 mcMode mcMode2 = new mcMode();
                 mcMode2.mode = (byte)item.Source;
-                MWSetImpl(Wrapper(item.Device), "Monitor_PiPSource", mcMode2);
+                if (!MWSetImpl(Wrapper(item.Device), "Monitor_PiPSource", mcMode2) && RefreshMWWrapper(item.Device))
+                {
+                    bool flag2 = MWSetImpl(Wrapper(item.Device), "Monitor_PiPSource", mcMode2);
+                }
             }
             if (item.Size != MonitorPiPSize.Invalid)
             {
                 mcMode mcMode3 = new mcMode();
                 mcMode3.mode = (byte)item.Size;
-                MWSetImpl(Wrapper(item.Device), "Monitor_PiPSize", mcMode3);
+                if (!MWSetImpl(Wrapper(item.Device), "Monitor_PiPSize", mcMode3) && RefreshMWWrapper(item.Device))
+                {
+                    bool flag3 = MWSetImpl(Wrapper(item.Device), "Monitor_PiPSize", mcMode3);
+                }
             }
             if (item.Position != MonitorPiPPosition.Invalid)
             {
                 mcMode mcMode4 = new mcMode();
                 mcMode4.mode = (byte)item.Position;
-                MWSetImpl(Wrapper(item.Device), "Monitor_PiPPosition", mcMode4);
+                if (!MWSetImpl(Wrapper(item.Device), "Monitor_PiPPosition", mcMode4) && RefreshMWWrapper(item.Device))
+                {
+                    bool flag4 = MWSetImpl(Wrapper(item.Device), "Monitor_PiPPosition", mcMode4);
+                }
             }
         }
 
         private void OnMonitorSettingsFetchedPiPSettingsEvent(MonitorPiPSettings item)
         {
             mcMode data = new mcMode();
-            MWGetImpl(Wrapper(item.Device), "Monitor_PiPMode", ref data);
+            if (!MWGetImpl(Wrapper(item.Device), "Monitor_PiPMode", ref data) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWGetImpl(Wrapper(item.Device), "Monitor_PiPMode", ref data);
+            }
             item.Mode = (MonitorPiPMode)data.mode;
             mcMode data2 = new mcMode();
-            MWGetImpl(Wrapper(item.Device), "Monitor_PiPSource", ref data2);
+            if (!MWGetImpl(Wrapper(item.Device), "Monitor_PiPSource", ref data2) && RefreshMWWrapper(item.Device))
+            {
+                bool flag2 = MWGetImpl(Wrapper(item.Device), "Monitor_PiPSource", ref data2);
+            }
             item.Source = (MonitorPiPSource)data2.mode;
             mcMode data3 = new mcMode();
-            MWGetImpl(Wrapper(item.Device), "Monitor_PiPSize", ref data3);
+            if (!MWGetImpl(Wrapper(item.Device), "Monitor_PiPSize", ref data3) && RefreshMWWrapper(item.Device))
+            {
+                bool flag3 = MWGetImpl(Wrapper(item.Device), "Monitor_PiPSize", ref data3);
+            }
             item.Size = (MonitorPiPSize)((data3.mode == 0) ? (-1) : ((int)data3.mode));
             mcMode data4 = new mcMode();
-            MWGetImpl(Wrapper(item.Device), "Monitor_PiPPosition", ref data4);
+            if (!MWGetImpl(Wrapper(item.Device), "Monitor_PiPPosition", ref data4) && RefreshMWWrapper(item.Device))
+            {
+                bool flag4 = MWGetImpl(Wrapper(item.Device), "Monitor_PiPPosition", ref data4);
+            }
             item.Position = (MonitorPiPPosition)data4.mode;
             _monitorSettingsFetchEvent.Response(item);
         }
@@ -289,13 +389,19 @@ namespace Synapse3.UserInteractive
         {
             mcMode mcMode = new mcMode();
             mcMode.mode = (byte)((item.State != 0) ? ((byte)item.Position) : 0);
-            MWSetImpl(Wrapper(item.Device), "Monitor_FPSPosition", mcMode);
+            if (!MWSetImpl(Wrapper(item.Device), "Monitor_FPSPosition", mcMode) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWSetImpl(Wrapper(item.Device), "Monitor_FPSPosition", mcMode);
+            }
         }
 
         private void OnMonitorSettingsFetchedFPSEvent(MonitorFPS item)
         {
             mcMode data = new mcMode();
-            MWGetImpl(Wrapper(item.Device), "Monitor_FPSPosition", ref data);
+            if (!MWGetImpl(Wrapper(item.Device), "Monitor_FPSPosition", ref data) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWGetImpl(Wrapper(item.Device), "Monitor_FPSPosition", ref data);
+            }
             item.State = ((data.mode != 0) ? 1u : 0u);
             item.Position = (MonitorFPSPosition)((data.mode == 0) ? (-1) : ((int)data.mode));
             _monitorSettingsFetchEvent.Response(item);
@@ -305,22 +411,52 @@ namespace Synapse3.UserInteractive
         {
             mcMode mcMode = new mcMode();
             mcMode.mode = (byte)item.Mode;
-            MWSetImpl(Wrapper(item.Device), "Monitor_HDR", mcMode);
+            if (!MWSetImpl(Wrapper(item.Device), "Monitor_HDR", mcMode) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWSetImpl(Wrapper(item.Device), "Monitor_HDR", mcMode);
+            }
         }
 
         private void OnMonitorSettingsFetchedHDREvent(MonitorHDR item)
         {
             mcMode data = new mcMode();
-            MWGetImpl(Wrapper(item.Device), "Monitor_HDR", ref data);
+            if (!MWGetImpl(Wrapper(item.Device), "Monitor_HDR", ref data) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWGetImpl(Wrapper(item.Device), "Monitor_HDR", ref data);
+            }
             item.Mode = (MonitorHDRMode)data.mode;
+            _monitorSettingsFetchEvent.Response(item);
+        }
+
+        private void OnMonitorSettingsChangedWindowsHDREvent(MonitorWindowsHDR item)
+        {
+            mcMode mcMode = new mcMode();
+            mcMode.mode = (byte)item.Mode;
+            if (!MWSetImpl(Wrapper(item.Device), "Monitor_WindowsHDR", mcMode) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWSetImpl(Wrapper(item.Device), "Monitor_WindowsHDR", mcMode);
+            }
+        }
+
+        private void OnMonitorSettingsFetchedWindowsHDREvent(MonitorWindowsHDR item)
+        {
+            mcMode data = new mcMode();
+            if (!MWGetImpl(Wrapper(item.Device), "Monitor_WindowsHDR", ref data) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWGetImpl(Wrapper(item.Device), "Monitor_WindowsHDR", ref data);
+            }
+            item.Mode = (MonitorWindowsHDRMode)data.mode;
             _monitorSettingsFetchEvent.Response(item);
         }
 
         private void OnMonitorSettingsChangedMotionBlurEvent(MonitorMotionBlur item)
         {
             mcMode mcMode = new mcMode();
-            mcMode.mode = (byte)((item.State != 0) ? 1u : 0u);
-            MWSetImpl(Wrapper(item.Device), "Monitor_MotionBlur", mcMode);
+            mcMode.mode = (byte)((item.State != 0) ? 1 : 0);
+            if (!MWSetImpl(Wrapper(item.Device), "Monitor_MotionBlur", mcMode) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWSetImpl(Wrapper(item.Device), "Monitor_MotionBlur", mcMode);
+            }
         }
 
         private void OnMonitorSettingsChangedInputSourceEvent(MonitorInputSource item)
@@ -328,25 +464,40 @@ namespace Synapse3.UserInteractive
             if (item.Source == MonitorPiPSource.Invalid)
             {
                 mcMode mcMode = new mcMode();
-                mcMode.mode = (byte)((item.Auto != 0) ? 1u : 0u);
-                MWSetImpl(Wrapper(item.Device), "Monitor_InputAutoSwitch", mcMode);
+                mcMode.mode = (byte)((item.Auto != 0) ? 1 : 0);
+                if (!MWSetImpl(Wrapper(item.Device), "Monitor_InputAutoSwitch", mcMode) && RefreshMWWrapper(item.Device))
+                {
+                    bool flag = MWSetImpl(Wrapper(item.Device), "Monitor_InputAutoSwitch", mcMode);
+                }
                 return;
             }
             mcMode mcMode2 = new mcMode();
             mcMode2.mode = 0;
-            MWSetImpl(Wrapper(item.Device), "Monitor_InputAutoSwitch", mcMode2);
+            if (!MWSetImpl(Wrapper(item.Device), "Monitor_InputAutoSwitch", mcMode2) && RefreshMWWrapper(item.Device))
+            {
+                bool flag2 = MWSetImpl(Wrapper(item.Device), "Monitor_InputAutoSwitch", mcMode2);
+            }
             mcMode mcMode3 = new mcMode();
             mcMode3.mode = (byte)item.Source;
-            MWSetImpl(Wrapper(item.Device), "Monitor_InputSource", mcMode3);
+            if (!MWSetImpl(Wrapper(item.Device), "Monitor_InputSource", mcMode3) && RefreshMWWrapper(item.Device))
+            {
+                bool flag3 = MWSetImpl(Wrapper(item.Device), "Monitor_InputSource", mcMode3);
+            }
         }
 
         private void OnMonitorSettingsFetchedInputSourceEvent(MonitorInputSource item)
         {
             mcMode data = new mcMode();
-            MWGetImpl(Wrapper(item.Device), "Monitor_InputAutoSwitch", ref data);
+            if (!MWGetImpl(Wrapper(item.Device), "Monitor_InputAutoSwitch", ref data) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWGetImpl(Wrapper(item.Device), "Monitor_InputAutoSwitch", ref data);
+            }
             item.Auto = ((data.mode != 0) ? 1u : 0u);
             mcMode data2 = new mcMode();
-            MWGetImpl(Wrapper(item.Device), "Monitor_InputSource", ref data2);
+            if (!MWGetImpl(Wrapper(item.Device), "Monitor_InputSource", ref data2) && RefreshMWWrapper(item.Device))
+            {
+                bool flag2 = MWGetImpl(Wrapper(item.Device), "Monitor_InputSource", ref data2);
+            }
             item.Source = (MonitorPiPSource)data2.mode;
             _monitorSettingsFetchEvent.Response(item);
         }
@@ -355,13 +506,19 @@ namespace Synapse3.UserInteractive
         {
             mcMode mcMode = new mcMode();
             mcMode.mode = (byte)item.Mode;
-            MWSetImpl(Wrapper(item.Device), "Monitor_InputAutoSwitch", mcMode);
+            if (!MWSetImpl(Wrapper(item.Device), "Monitor_InputAutoSwitch", mcMode) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWSetImpl(Wrapper(item.Device), "Monitor_InputAutoSwitch", mcMode);
+            }
         }
 
         private void OnMonitorSettingsFetchedInputAutoSwitchEvent(MonitorInputAutoSwitch item)
         {
             mcMode data = new mcMode();
-            MWGetImpl(Wrapper(item.Device), "Monitor_InputAutoSwitch", ref data);
+            if (!MWGetImpl(Wrapper(item.Device), "Monitor_InputAutoSwitch", ref data) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWGetImpl(Wrapper(item.Device), "Monitor_InputAutoSwitch", ref data);
+            }
             item.Mode = (MonitorInputAutoSwitchMode)data.mode;
             _monitorSettingsFetchEvent.Response(item);
         }
@@ -370,20 +527,121 @@ namespace Synapse3.UserInteractive
         {
             mcMode mcMode = new mcMode();
             mcMode.mode = (byte)item.Mode;
-            MWSetImpl(Wrapper(item.Device), "Monitor_Gamma", mcMode);
+            if (!MWSetImpl(Wrapper(item.Device), "Monitor_Gamma", mcMode) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWSetImpl(Wrapper(item.Device), "Monitor_Gamma", mcMode);
+            }
         }
 
         private void OnMonitorSettingsChangedDeviceModeEvent(MonitorDeviceMode item)
         {
             mcDeviceMode mcDeviceMode = new mcDeviceMode();
             mcDeviceMode.deviceMode = (uint)item.Mode;
-            MWSetImpl(Wrapper(item.Device), "Monitor_DeviceMode", mcDeviceMode);
+            if (!MWSetImpl(Wrapper(item.Device), "Monitor_DeviceMode", mcDeviceMode) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWSetImpl(Wrapper(item.Device), "Monitor_DeviceMode", mcDeviceMode);
+            }
+        }
+
+        private void OnMonitorSettingsChangedICCProfilesEvent(MonitorICCProfiles item)
+        {
+            if (item.ICCProfile != "")
+            {
+                mcParamString mcParamString = new mcParamString();
+                mcParamString.String = item.ICCProfile;
+                if (!MWSetImpl(Wrapper(item.Device), "Monitor_ColorProfile", mcParamString) && RefreshMWWrapper(item.Device))
+                {
+                    bool flag = MWSetImpl(Wrapper(item.Device), "Monitor_ColorProfile", mcParamString);
+                }
+            }
+        }
+
+        private void OnMonitorSettingsFetchedICCProfilesEvent(MonitorICCProfiles item)
+        {
+            mcParamString data = new mcParamString();
+            if (!MWGetImpl(Wrapper(item.Device), "Monitor_ColorProfile", ref data) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWGetImpl(Wrapper(item.Device), "Monitor_ColorProfile", ref data);
+            }
+            item.ICCProfile = data.String;
+            mcColorProfileList data2 = new mcColorProfileList();
+            if (!MWGetImpl(Wrapper(item.Device), "Monitor_EnumColorProfile", ref data2) && RefreshMWWrapper(item.Device))
+            {
+                bool flag2 = MWGetImpl(Wrapper(item.Device), "Monitor_EnumColorProfile", ref data2);
+            }
+            item.MonitorICCProfilesList = new List<string>();
+            for (int i = 0; i < data2.wTotalCount; i++)
+            {
+                item.MonitorICCProfilesList.Add(data2.ColorProfileList[i]);
+            }
+            _monitorSettingsFetchEvent.Response(item);
+        }
+
+        private void OnMonitorSettingsChangedRefreshRateEvent(Contract.MonitorLib.MonitorRefreshRate item)
+        {
+            if (item.ActiveRefreshRate != 0)
+            {
+                ulong data = (ulong)item.ActiveRefreshRate;
+                if (!MWSetImpl(Wrapper(item.Device), "Monitor_RefreshRate", data) && RefreshMWWrapper(item.Device))
+                {
+                    bool flag = MWSetImpl(Wrapper(item.Device), "Monitor_RefreshRate", data);
+                }
+            }
+        }
+
+        private void OnMonitorSettingsFetchedRefreshRateEvent(Contract.MonitorLib.MonitorRefreshRate item)
+        {
+            lock (_lock)
+            {
+                ulong num = 0uL;
+                RzCtl_ManagedWrapper rzCtl_ManagedWrapper = Wrapper(item.Device);
+                if (rzCtl_ManagedWrapper != null)
+                {
+                    object paramValue = num;
+                    if (rzCtl_ManagedWrapper.GetParamValue("Monitor_RefreshRate", ref paramValue))
+                    {
+                        num = (ulong)paramValue;
+                    }
+                }
+                item.ActiveRefreshRate = (int)num;
+            }
+            mcSupportedRefreshRate data = new mcSupportedRefreshRate();
+            if (!MWGetImpl(Wrapper(item.Device), "Monitor_SupportedRefreshRate", ref data) && RefreshMWWrapper(item.Device))
+            {
+                bool flag = MWGetImpl(Wrapper(item.Device), "Monitor_SupportedRefreshRate", ref data);
+            }
+            item.RefreshRateList = new List<int>();
+            for (int i = 0; i < data.wTotalCount; i++)
+            {
+                item.RefreshRateList.Add(data.RefreshRateList[i]);
+            }
+            _monitorSettingsFetchEvent.Response(item);
+        }
+
+        private void OnMonitorSettingsFetchedFWVersionEvent(MonitorDeviceInfo item)
+        {
+            lock (_lock)
+            {
+                RzCtl_ManagedWrapper rzCtl_ManagedWrapper = Wrapper(item.Device);
+                if (rzCtl_ManagedWrapper != null)
+                {
+                    mcParamString mcParamString = new mcParamString();
+                    object paramValue = mcParamString;
+                    if (rzCtl_ManagedWrapper.GetParamValue("Monitor_FirmwareVersion", ref paramValue))
+                    {
+                        item.FirmwareVersion = ((mcParamString)paramValue).String;
+                    }
+                }
+            }
+            _monitorSettingsFetchEvent.Response(item);
         }
 
         private bool MWSetImpl<T>(RzCtl_ManagedWrapper wrapper, string paramId, T data)
         {
             lock (_lock)
             {
+                Trace.TraceInformation("MWSetImpl -Start-");
+                Trace.TraceInformation($"SET Info:: Device PID: {wrapper.PID}, Handle: {wrapper.Handle}, paramID: {paramId}");
                 if (wrapper == null)
                 {
                     return false;
@@ -391,9 +649,10 @@ namespace Synapse3.UserInteractive
                 object paramValue = data;
                 if (!wrapper.SetParamValue(paramId, ref paramValue))
                 {
-                    Trace.TraceError("MWSetImpl: Failed for paramId: " + paramId);
+                    Trace.TraceError($"MWSetImpl: Failed for paramId: {paramId}");
                     return false;
                 }
+                Trace.TraceInformation("MWSetImpl -End-");
                 return true;
             }
         }
@@ -402,6 +661,8 @@ namespace Synapse3.UserInteractive
         {
             lock (_lock)
             {
+                Trace.TraceInformation("MWGetImpl -Start-");
+                Trace.TraceInformation($"GET Info:: Device PID: {wrapper.PID}, Handle: {wrapper.Handle}, paramID: {paramId}");
                 if (wrapper == null)
                 {
                     return false;
@@ -411,7 +672,47 @@ namespace Synapse3.UserInteractive
                 {
                     return false;
                 }
+                Trace.TraceInformation("MWGetImpl -End-");
                 return true;
+            }
+        }
+
+        private bool RefreshMWWrapper(Device device)
+        {
+            bool flag = false;
+            try
+            {
+                Trace.TraceInformation("RefreshMWWrapper: Enter retry");
+                if (_wrappers.ContainsKey(device.Handle))
+                {
+                    if (_devices.ContainsKey(device.Handle))
+                    {
+                        _devices.Remove(device.Handle);
+                    }
+                    _wrappers[device.Handle].Dispose();
+                    _wrappers.Remove(device.Handle);
+                }
+                _wrappers[device.Handle] = new RzCtl_ManagedWrapper((ushort)device.Vendor_ID, (ushort)device.Product_ID, (ulong)device.Handle, Constants.RAZER_BIN + "\\Devices\\Mw\\");
+                if (_wrappers[device.Handle] == null || !_wrappers[device.Handle].Initialise())
+                {
+                    flag = false;
+                    if (_wrappers.ContainsKey(device.Handle))
+                    {
+                        _wrappers.Remove(device.Handle);
+                    }
+                    Trace.TraceError($"RefreshMWWrapper: Initialise failed {device.Product_ID}. Undoing add.");
+                    return flag;
+                }
+                flag = true;
+                _devices[device.Handle] = device;
+                Trace.TraceInformation($"RefreshMWWrapper: Added {device.Product_ID} to collection.");
+                return flag;
+            }
+            catch (Exception arg)
+            {
+                flag = false;
+                Trace.TraceError($"RefreshMWWrapper exception: {arg}");
+                return flag;
             }
         }
     }

@@ -6,8 +6,12 @@ namespace Synapse3.UserInteractive
 
         event OnDeviceChanged OnDeviceRemovedEvent;
 
+        event OnDeviceChanged OnDeviceSerialAddedEvent;
+
         void SendDeviceAdded(uint pid, uint eid, long handle);
 
         void SendDeviceRemoved(uint pid, uint eid, long handle);
+
+        void SendDeviceSerialAdded(uint pid, uint eid, long handle, string serialNo);
     }
 }

@@ -20,6 +20,8 @@ namespace Synapse3.UserInteractive
 
         public event OnDeviceChanged OnDeviceRemovedEvent;
 
+        public event OnDeviceChanged OnDeviceSerialAddedEvent;
+
         public DeviceDetectionClient()
         {
             _connectionTimer = new Timer();
@@ -65,7 +67,7 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception ex)
             {
-                Trace.TraceError("InitConnection: " + ex?.Message);
+                Trace.TraceError($"InitConnection: {ex?.Message}");
             }
             if (_hub.Connection.State == ConnectionState.Connected)
             {
@@ -132,6 +134,27 @@ namespace Synapse3.UserInteractive
             finally
             {
                 Trace.TraceInformation("SendDeviceRemoved: done.");
+            }
+        }
+
+        public void SendDeviceSerialAdded(uint pid, uint eid, long handle, string serialNo)
+        {
+            try
+            {
+                Trace.TraceInformation("SendDeviceSerialAdded: invoke.");
+                if (_hubProx != null && _hub.Connection.State == ConnectionState.Connected)
+                {
+                    Trace.TraceInformation("SendDeviceSerialAdded: Sending.");
+                    _hubProx.Invoke("DeviceSerialAddedromClient", pid, eid, handle, serialNo);
+                }
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError($"SendDeviceSerialAdded: exception occurred {ex.Message}");
+            }
+            finally
+            {
+                Trace.TraceInformation("SendDeviceSerialAdded: done.");
             }
         }
     }

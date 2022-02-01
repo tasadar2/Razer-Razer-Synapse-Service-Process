@@ -10,6 +10,10 @@ namespace Synapse3.UserInteractive
 
         event OnMonitorSettingsChangedDisplayMode OnMonitorSettingsChangedDisplayModeEvent;
 
+        event OnMonitorSettingsChangedTHXMode OnMonitorSettingsChangedTHXModeEvent;
+
+        event OnMonitorSettingsChangedColorGamut OnMonitorSettingsChangedColorGamutEvent;
+
         event OnMonitorSettingsChangedFreeSync OnMonitorSettingsChangedFreeSyncEvent;
 
         event OnMonitorSettingsChangedImageScaling OnMonitorSettingsChangedImageScalingEvent;
@@ -31,5 +35,11 @@ namespace Synapse3.UserInteractive
         event OnMonitorSettingsChangedGamma OnMonitorSettingsChangedGammaEvent;
 
         event OnMonitorSettingsChangedDeviceMode OnMonitorSettingsChangedDeviceModeEvent;
+
+        event OnMonitorSettingsChangedICCProfiles OnMonitorSettingsChangedICCProfilesEvent;
+
+        event OnMonitorSettingsChangedRefreshRate OnMonitorSettingsChangedRefreshRateEvent;
+
+        event OnMonitorSettingsChangedWindowsHDR OnMonitorSettingsChangedWindowsHDREvent;
     }
 }
