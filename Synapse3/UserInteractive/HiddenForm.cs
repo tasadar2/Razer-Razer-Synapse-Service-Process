@@ -39,6 +39,8 @@ namespace Synapse3.UserInteractive
 
         private DeviceDetectionHandler _deviceDetectionHandler;
 
+        private RegistryMonitor _registryMonitor;
+
         private IContainer components;
 
         public event WndProcDelegate OnWndProcEvent;
@@ -75,6 +77,7 @@ namespace Synapse3.UserInteractive
             _messageEventHandler = new MessageEventHandler(_deviceEventsClient);
             _monitorSettingsChangedHandler = new MonitorSettingsChangedHandler(_deviceDetectionClient, _deviceEventsClient, _deviceEventsClient, this);
             _deviceDetectionHandler = new DeviceDetectionHandler(_accounts, _deviceDetectionClient);
+            _registryMonitor = new RegistryMonitor(_applicationEventsClient);
             await _accounts.InitConnection();
             await _applicationEventsClient.InitConnection();
             await _deviceEventsClient.InitConnection();
@@ -85,6 +88,7 @@ namespace Synapse3.UserInteractive
             }
             _userInputMonitor.Start();
             UpdateRefreshRate();
+            _registryMonitor.Start();
         }
 
         private void UpdateRefreshRate()

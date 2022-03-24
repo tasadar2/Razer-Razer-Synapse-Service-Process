@@ -11,7 +11,7 @@ using Microsoft.AspNet.SignalR.Client;
 
 namespace Synapse3.UserInteractive
 {
-    public class ApplicationEventsClient : ISendLastInputInfo, IUserTextEvent, IUserAccelerationEvent, IGetForegroundWindowRectEvent, IScreenRefreshRateEvent, IOTFMacroRecorderEvent, ISetForegroundWindow, IDisplayChangedEvent, IApplicationNotificationEvent
+    public class ApplicationEventsClient : ISendLastInputInfo, IUserTextEvent, IUserAccelerationEvent, IGetForegroundWindowRectEvent, IScreenRefreshRateEvent, IOTFMacroRecorderEvent, ISetForegroundWindow, IDisplayChangedEvent, IApplicationNotificationEvent, IRegistryChangedInfo
     {
         private HubConnectionHelper _hub;
 
@@ -151,6 +151,25 @@ namespace Synapse3.UserInteractive
             catch (Exception arg)
             {
                 Trace.TraceError($"SetLastInputInfo: Exception occured: {arg}");
+            }
+        }
+
+        public async Task SetRegistryChangedInfo(string info)
+        {
+            try
+            {
+                if (_hub.Connection.State == ConnectionState.Connected)
+                {
+                    await (_hubProx?.Invoke("SetRegistryChangedInfo", info));
+                }
+                else
+                {
+                    Trace.TraceError($"SetRegistryChangedInfo: Connection state {_hub.Connection.State}");
+                }
+            }
+            catch (Exception arg)
+            {
+                Trace.TraceError($"SetRegistryChangedInfo: Exception occured: {arg}");
             }
         }
 

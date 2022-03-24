@@ -59,9 +59,12 @@
     <Reference Include="Gma.System.MouseKeyHook">
       <HintPath>$(RazerServicePath)\Lib\Macros.MouseKeyHook\Gma.System.MouseKeyHook.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(RazerUserProcessPath)\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ServiceProcess" />
     <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="System.Management" />
-    <Reference Include="System.ServiceProcess" />
     <Reference Include="WebApiContrib.Formatting.ProtoBuf">
       <HintPath>$(RazerUserProcessPath)\WebApiContrib.Formatting.ProtoBuf.dll</HintPath>
     </Reference>
