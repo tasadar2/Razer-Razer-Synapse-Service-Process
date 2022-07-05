@@ -1,7 +1,5 @@
-#define TRACE
 using System;
 using System.Configuration;
-using System.Diagnostics;
 using Microsoft.AspNet.SignalR.Client;
 using Microsoft.Win32;
 
@@ -21,7 +19,7 @@ namespace Synapse3.UserInteractive
 
         private void Connection_Error(Exception obj)
         {
-            Trace.TraceError($"HubConnectionHelper: {obj?.Message}");
+            Logger.Instance.Error($"HubConnectionHelper: {obj?.Message}");
         }
 
         public void Dispose()

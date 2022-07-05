@@ -1,6 +1,4 @@
-#define TRACE
 using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Timers;
 using Contract.Central;
@@ -42,13 +40,13 @@ namespace Synapse3.UserInteractive
         {
             if (await InitConnection())
             {
-                Trace.TraceInformation("AccountsClient: Reconnected");
+                Logger.Instance.Debug("AccountsClient: Reconnected");
             }
         }
 
         private void ResetConnectionTimer()
         {
-            Trace.TraceInformation("AccountsClient: ResetConnectionTimer");
+            Logger.Instance.Debug("AccountsClient: ResetConnectionTimer");
             _connectionTimer?.Stop();
             _connectionTimer.Start();
         }
@@ -83,7 +81,7 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception ex)
             {
-                Trace.TraceError($"InitConnection: {ex?.Message}");
+                Logger.Instance.Error($"InitConnection: {ex?.Message}");
             }
             if (_hub.Connection.State == ConnectionState.Connected)
             {
@@ -97,12 +95,12 @@ namespace Synapse3.UserInteractive
 
         private void Connection_StateChanged(StateChange obj)
         {
-            Trace.TraceInformation($"AccountsClient: old {obj.OldState} new {obj.NewState}");
+            Logger.Instance.Debug($"AccountsClient: old {obj.OldState} new {obj.NewState}");
         }
 
         private void Connection_Closed()
         {
-            Trace.TraceInformation("AccountsClient: Disconnected, retrying to reconnect...");
+            Logger.Instance.Debug("AccountsClient: Disconnected, retrying to reconnect...");
             ResetConnectionTimer();
         }
 
@@ -122,7 +120,7 @@ namespace Synapse3.UserInteractive
 
         public string GetRazerUserLoginToken()
         {
-            Trace.TraceInformation("GetRazerUserLogin: enter");
+            Logger.Instance.Debug("GetRazerUserLogin: enter");
             try
             {
                 if (!string.IsNullOrEmpty(_token))
@@ -131,7 +129,7 @@ namespace Synapse3.UserInteractive
                 }
                 if (_hubProx != null && _hub.Connection.State == ConnectionState.Connected)
                 {
-                    Trace.TraceInformation("GetRazerUserLogin: invoke");
+                    Logger.Instance.Debug("GetRazerUserLogin: invoke");
                     RazerUserInfo result = _hubProx.Invoke<RazerUserInfo>("GetRazerUser", new object[0]).Result;
                     if (result != null)
                     {
@@ -139,16 +137,16 @@ namespace Synapse3.UserInteractive
                         {
                             _token = result.Token;
                         }
-                        Trace.TraceInformation("GetRazerUserLogin: exit");
+                        Logger.Instance.Debug("GetRazerUserLogin: exit");
                         return result.Token;
                     }
                 }
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"GetRazerUserLogin: exception occurred {arg}");
+                Logger.Instance.Error($"GetRazerUserLogin: exception occurred {arg}");
             }
-            Trace.TraceInformation("GetRazerUserLogin: exit");
+            Logger.Instance.Debug("GetRazerUserLogin: exit");
             return "";
         }
 
@@ -165,7 +163,7 @@ namespace Synapse3.UserInteractive
         {
             try
             {
-                Trace.TraceInformation("IsRazerCentralLoggedIn: invoke.");
+                Logger.Instance.Debug("IsRazerCentralLoggedIn: invoke.");
                 if (_hubProx != null && _hub.Connection.State == ConnectionState.Connected)
                 {
                     return _hubProx.Invoke<bool>("IsRazerCentralLoggedIn", new object[0]).Result;
@@ -173,11 +171,11 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"IsRazerCentralLoggedIn: exception occurred {arg}");
+                Logger.Instance.Error($"IsRazerCentralLoggedIn: exception occurred {arg}");
             }
             finally
             {
-                Trace.TraceInformation("IsRazerCentralLoggedIn: done.");
+                Logger.Instance.Debug("IsRazerCentralLoggedIn: done.");
             }
             return false;
         }

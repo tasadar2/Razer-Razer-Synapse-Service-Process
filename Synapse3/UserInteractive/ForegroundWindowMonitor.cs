@@ -1,4 +1,3 @@
-#define TRACE
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -140,19 +139,19 @@ namespace Synapse3.UserInteractive
                     if (!string.IsNullOrEmpty(text) && !_active.Equals(text))
                     {
                         _active = text;
-                        Trace.TraceInformation($"SetForegroundWindow: {text}.");
+                        Logger.Instance.Debug($"SetForegroundWindow: {text}.");
                         await _foregroundWindowImpl.SetForegroundWindow(text);
                         bRetry = true;
                     }
                 }
                 else
                 {
-                    Trace.TraceInformation("ProcessForegroundWindow: GetForegroundWindow Return Zero");
+                    Logger.Instance.Debug("ProcessForegroundWindow: GetForegroundWindow Return Zero");
                 }
             }
             catch (Exception arg)
             {
-                Trace.TraceInformation($"ProcessForegroundWindow: exception {arg}");
+                Logger.Instance.Debug($"ProcessForegroundWindow: exception {arg}");
             }
             finally
             {
@@ -167,7 +166,7 @@ namespace Synapse3.UserInteractive
         {
             _foregroundTimer?.Stop();
             _foregroundTimer.Interval = interval;
-            Trace.TraceInformation($"ResetForegroundTimer: Check again after {_foregroundTimer.Interval} ms.");
+            Logger.Instance.Debug($"ResetForegroundTimer: Check again after {_foregroundTimer.Interval} ms.");
             _foregroundTimer?.Start();
         }
 
@@ -258,7 +257,7 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception arg)
             {
-                Trace.TraceInformation($"QueryManagementObject: exception handled {arg}");
+                Logger.Instance.Debug($"QueryManagementObject: exception handled {arg}");
                 name = string.Empty;
                 return name;
             }
@@ -278,7 +277,7 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception arg)
             {
-                Trace.TraceInformation($"GetTitle: exception handled {arg}");
+                Logger.Instance.Debug($"GetTitle: exception handled {arg}");
                 return "";
             }
         }

@@ -1,6 +1,4 @@
-#define TRACE
 using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Timers;
 using Contract.Common;
@@ -34,13 +32,13 @@ namespace Synapse3.UserInteractive
         {
             if (await InitConnection())
             {
-                Trace.TraceInformation("DeviceDetectionClient: Reconnected");
+                Logger.Instance.Debug("DeviceDetectionClient: Reconnected");
             }
         }
 
         private void ResetConnectionTimer()
         {
-            Trace.TraceInformation("DeviceDetectionClient: ResetConnectionTimer");
+            Logger.Instance.Debug("DeviceDetectionClient: ResetConnectionTimer");
             _connectionTimer?.Stop();
             _connectionTimer.Start();
         }
@@ -61,13 +59,17 @@ namespace Synapse3.UserInteractive
             {
                 this.OnDeviceRemovedEvent?.Invoke(device);
             });
+            _hubProx.On("OnDeviceSerialAdded", delegate(Device device)
+            {
+                this.OnDeviceSerialAddedEvent?.Invoke(device);
+            });
             try
             {
                 await _hub.Connection.Start();
             }
             catch (Exception ex)
             {
-                Trace.TraceError($"InitConnection: {ex?.Message}");
+                Logger.Instance.Error($"InitConnection: {ex?.Message}");
             }
             if (_hub.Connection.State == ConnectionState.Connected)
             {
@@ -86,12 +88,12 @@ namespace Synapse3.UserInteractive
 
         private void Connection_StateChanged(StateChange obj)
         {
-            Trace.TraceInformation($"DeviceDetectionClient: old {obj.OldState} new {obj.NewState}");
+            Logger.Instance.Debug($"DeviceDetectionClient: old {obj.OldState} new {obj.NewState}");
         }
 
         private void Connection_Closed()
         {
-            Trace.TraceInformation("DeviceDetectionClient: Disconnected, retrying to reconnect...");
+            Logger.Instance.Debug("DeviceDetectionClient: Disconnected, retrying to reconnect...");
             ResetConnectionTimer();
         }
 
@@ -99,20 +101,20 @@ namespace Synapse3.UserInteractive
         {
             try
             {
-                Trace.TraceInformation("SendDeviceAdded: invoke.");
+                Logger.Instance.Debug("SendDeviceAdded: invoke.");
                 if (_hubProx != null && _hub.Connection.State == ConnectionState.Connected)
                 {
-                    Trace.TraceInformation("SendDeviceAdded: Sending.");
+                    Logger.Instance.Debug("SendDeviceAdded: Sending.");
                     _hubProx.Invoke("DeviceAddedFromClient", pid, eid, handle);
                 }
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"SendDeviceAdded: exception occurred {arg}");
+                Logger.Instance.Error($"SendDeviceAdded: exception occurred {arg}");
             }
             finally
             {
-                Trace.TraceInformation("SendDeviceAdded: done.");
+                Logger.Instance.Debug("SendDeviceAdded: done.");
             }
         }
 
@@ -120,20 +122,20 @@ namespace Synapse3.UserInteractive
         {
             try
             {
-                Trace.TraceInformation("SendDeviceRemoved: invoke.");
+                Logger.Instance.Debug("SendDeviceRemoved: invoke.");
                 if (_hubProx != null && _hub.Connection.State == ConnectionState.Connected)
                 {
-                    Trace.TraceInformation("SendDeviceRemoved: Sending.");
+                    Logger.Instance.Debug("SendDeviceRemoved: Sending.");
                     _hubProx.Invoke("DeviceRemovedFromClient", pid, eid, handle);
                 }
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"SendDeviceRemoved: exception occurred {arg}");
+                Logger.Instance.Error($"SendDeviceRemoved: exception occurred {arg}");
             }
             finally
             {
-                Trace.TraceInformation("SendDeviceRemoved: done.");
+                Logger.Instance.Debug("SendDeviceRemoved: done.");
             }
         }
 
@@ -141,20 +143,20 @@ namespace Synapse3.UserInteractive
         {
             try
             {
-                Trace.TraceInformation("SendDeviceSerialAdded: invoke.");
+                Logger.Instance.Debug("SendDeviceSerialAdded: invoke.");
                 if (_hubProx != null && _hub.Connection.State == ConnectionState.Connected)
                 {
-                    Trace.TraceInformation("SendDeviceSerialAdded: Sending.");
+                    Logger.Instance.Debug("SendDeviceSerialAdded: Sending.");
                     _hubProx.Invoke("DeviceSerialAddedromClient", pid, eid, handle, serialNo);
                 }
             }
             catch (Exception ex)
             {
-                Trace.TraceError($"SendDeviceSerialAdded: exception occurred {ex.Message}");
+                Logger.Instance.Error($"SendDeviceSerialAdded: exception occurred {ex.Message}");
             }
             finally
             {
-                Trace.TraceInformation("SendDeviceSerialAdded: done.");
+                Logger.Instance.Debug("SendDeviceSerialAdded: done.");
             }
         }
     }

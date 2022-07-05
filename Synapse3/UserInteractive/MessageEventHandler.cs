@@ -1,6 +1,4 @@
-#define TRACE
 using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Synapse3.UserInteractive
@@ -28,7 +26,7 @@ namespace Synapse3.UserInteractive
             msg = msg.ToLower();
             if (msg == "monitoroff")
             {
-                Trace.TraceInformation($"OnMessageEvent: SendMessage {HWND_BROADCAST}, {WM_SYSCOMMAND}, {WM_SYSCOMMAND}, {OFF}");
+                Logger.Instance.Debug($"OnMessageEvent: SendMessage {HWND_BROADCAST}, {WM_SYSCOMMAND}, {WM_SYSCOMMAND}, {OFF}");
                 SendMessage(HWND_BROADCAST, WM_SYSCOMMAND, SC_MONITORPOWER, OFF);
             }
         }

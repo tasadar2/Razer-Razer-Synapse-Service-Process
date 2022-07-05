@@ -1,8 +1,6 @@
-#define TRACE
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -61,15 +59,15 @@ namespace Synapse3.UserInteractive
 
         private void ProcessDevices(bool bAdd)
         {
-            Trace.TraceInformation("ProcessDevices::ProcessDevices action " + (bAdd ? "Add" : "Remove"));
+            Logger.Instance.Debug("ProcessDevices::ProcessDevices action " + (bAdd ? "Add" : "Remove"));
             List<Device> appStreamDevices = _client.GetAppStreamDevices();
             if (appStreamDevices != null)
             {
-                Trace.TraceInformation($"ProcessDevices::GetAppStreamDevices return {appStreamDevices.Count} devices");
+                Logger.Instance.Debug($"ProcessDevices::GetAppStreamDevices return {appStreamDevices.Count} devices");
             }
             else
             {
-                Trace.TraceError("ProcessDevices::GetAppStreamDevices return null");
+                Logger.Instance.Error("ProcessDevices::GetAppStreamDevices return null");
             }
             if (appStreamDevices == null)
             {
@@ -112,7 +110,7 @@ namespace Synapse3.UserInteractive
                     }
                     else
                     {
-                        Trace.TraceError($"ProcessDevice::Failed to add {device.Name} in audioAppStreamsResolver.");
+                        Logger.Instance.Error($"ProcessDevice::Failed to add {device.Name} in audioAppStreamsResolver.");
                     }
                 }
                 else
@@ -140,13 +138,13 @@ namespace Synapse3.UserInteractive
 
         private void OnApplicationStreamsDeviceAdded(Device device)
         {
-            Trace.TraceInformation($"OnApplicationStreamsDeviceAdded {device.Name}");
+            Logger.Instance.Debug($"OnApplicationStreamsDeviceAdded {device.Name}");
             ProcessDevices(bAdd: true);
         }
 
         private void OnApplicationStreamsDeviceRemoved(Device device)
         {
-            Trace.TraceInformation($"OnApplicationStreamsDeviceRemoved {device.Name}");
+            Logger.Instance.Debug($"OnApplicationStreamsDeviceRemoved {device.Name}");
             ProcessDevices(bAdd: false);
             if (_cache.ContainsKey(device.Handle))
             {
@@ -156,38 +154,38 @@ namespace Synapse3.UserInteractive
 
         private void OnApplicationStreamsDeviceGetStreamsEvent(Device device)
         {
-            Trace.TraceInformation($"OnApplicationStreamsDeviceGetStreamsEvent {device.Name}");
+            Logger.Instance.Debug($"OnApplicationStreamsDeviceGetStreamsEvent {device.Name}");
             ProcessDevice(device, bAdd: true);
         }
 
         private void OnApplicationStreamsSetEvent(ApplicationStreams streams)
         {
-            Trace.TraceInformation("OnApplicationStreamsSetEvent START streams");
+            Logger.Instance.Debug("OnApplicationStreamsSetEvent START streams");
             if (streams == null)
             {
                 return;
             }
-            Trace.TraceInformation($"OnApplicationStreamsSetEvent {streams.Device.Handle}");
+            Logger.Instance.Debug($"OnApplicationStreamsSetEvent {streams.Device.Handle}");
             int num = _processedDeviceList.FindIndex((Device x) => x.Handle == streams.Device.Handle);
-            Trace.TraceInformation($"OnApplicationStreamsSetEvent {num} initial.");
+            Logger.Instance.Debug($"OnApplicationStreamsSetEvent {num} initial.");
             if (num < 0)
             {
-                Trace.TraceInformation($"OnApplicationStreamsSetEvent Adding {streams.Device.Handle}.");
+                Logger.Instance.Debug($"OnApplicationStreamsSetEvent Adding {streams.Device.Handle}.");
                 ProcessDevice(streams.Device, bAdd: true);
                 num = _processedDeviceList.FindIndex((Device x) => x.Handle == streams.Device.Handle);
-                Trace.TraceInformation($"OnApplicationStreamsSetEvent {num} after add.");
+                Logger.Instance.Debug($"OnApplicationStreamsSetEvent {num} after add.");
             }
             if (num >= 0)
             {
                 string arg = string.Join(Environment.NewLine, (IEnumerable<ApplicationStream>)streams.ApplicationStreamList.ToArray());
-                Trace.TraceInformation($"OnApplicationStreamsSetEvent back-end set streams called {arg}.");
+                Logger.Instance.Debug($"OnApplicationStreamsSetEvent back-end set streams called {arg}.");
                 _audioAppStreamsResolver?.Set(streams);
             }
             else
             {
-                Trace.TraceError("OnApplicationStreamsSetEvent cant find device.");
+                Logger.Instance.Error("OnApplicationStreamsSetEvent cant find device.");
             }
-            Trace.TraceInformation("OnApplicationStreamsSetEvent END streams");
+            Logger.Instance.Debug("OnApplicationStreamsSetEvent END streams");
         }
 
         private static string ProgramFilesx86()
@@ -223,7 +221,7 @@ namespace Synapse3.UserInteractive
 
         private void OnApplicationStreamSetEvent(Device device, ApplicationStream stream)
         {
-            Trace.TraceInformation("OnApplicationStreamsSetEvent START stream");
+            Logger.Instance.Debug("OnApplicationStreamsSetEvent START stream");
             if (device == null || stream == null)
             {
                 return;
@@ -232,16 +230,16 @@ namespace Synapse3.UserInteractive
             {
                 stream.Name = "Razer Synapse Service";
                 stream.ExePath = ServicePath();
-                Trace.TraceInformation($"OnApplicationStreamsSetEvent Setting Service Path {stream.ExePath} source:{stream.Source} ouput:{stream.OutputMode}");
+                Logger.Instance.Debug($"OnApplicationStreamsSetEvent Setting Service Path {stream.ExePath} source:{stream.Source} ouput:{stream.OutputMode}");
             }
-            Trace.TraceInformation($"OnApplicationStreamsSetEvent {device.Name} {stream.Name} id:{stream.StreamID} source:{stream.Source} ouput:{stream.OutputMode}");
+            Logger.Instance.Debug($"OnApplicationStreamsSetEvent {device.Name} {stream.Name} id:{stream.StreamID} source:{stream.Source} ouput:{stream.OutputMode}");
             int num = _processedDeviceList.FindIndex((Device x) => x.Handle == device.Handle);
             if (num >= 0)
             {
                 CRSy3_AudioAppStreamsWrapper audioAppStreamsResolver = _audioAppStreamsResolver;
                 if (audioAppStreamsResolver != null && !audioAppStreamsResolver.SetApplicationStream(device, stream))
                 {
-                    Trace.TraceError($"OnApplicationStreamsSetEvent: Failed to set application stream {device.Name} {stream.Name} id:{stream.StreamID} source:{stream.Source} ouput:{stream.OutputMode}");
+                    Logger.Instance.Error($"OnApplicationStreamsSetEvent: Failed to set application stream {device.Name} {stream.Name} id:{stream.StreamID} source:{stream.Source} ouput:{stream.OutputMode}");
                 }
                 string key = stream.Name.ToLower();
                 if (_applicationStreamWorkAround.ContainsKey(key))
@@ -250,18 +248,18 @@ namespace Synapse3.UserInteractive
                     if (applicationStream != null)
                     {
                         applicationStream.OutputMode = stream.OutputMode;
-                        Trace.TraceInformation($"OnApplicationStreamsSetEvent Second stream found. Setting {applicationStream.OutputMode} to {applicationStream.Name} id:{applicationStream.StreamID}");
+                        Logger.Instance.Debug($"OnApplicationStreamsSetEvent Second stream found. Setting {applicationStream.OutputMode} to {applicationStream.Name} id:{applicationStream.StreamID}");
                         CRSy3_AudioAppStreamsWrapper audioAppStreamsResolver2 = _audioAppStreamsResolver;
                         if (audioAppStreamsResolver2 != null && !audioAppStreamsResolver2.SetApplicationStream(device, applicationStream))
                         {
-                            Trace.TraceError($"OnApplicationStreamsSetEvent: Failed to set for second application stream {device.Name} {applicationStream.Name} id:{applicationStream.StreamID} source:{applicationStream.Source} ouput:{applicationStream.OutputMode}");
+                            Logger.Instance.Error($"OnApplicationStreamsSetEvent: Failed to set for second application stream {device.Name} {applicationStream.Name} id:{applicationStream.StreamID} source:{applicationStream.Source} ouput:{applicationStream.OutputMode}");
                         }
                     }
                 }
             }
             else
             {
-                Trace.TraceError($"OnApplicationStreamsSetEvent: device not found in the device list. Retrying. {device.Name} {stream.Name} id:{stream.StreamID} source:{stream.Source} ouput:{stream.OutputMode}");
+                Logger.Instance.Error($"OnApplicationStreamsSetEvent: device not found in the device list. Retrying. {device.Name} {stream.Name} id:{stream.StreamID} source:{stream.Source} ouput:{stream.OutputMode}");
                 if (_audioAppStreamsResolver?.DeviceAdded(device) ?? false)
                 {
                     lock (_lock)
@@ -271,7 +269,7 @@ namespace Synapse3.UserInteractive
                     CRSy3_AudioAppStreamsWrapper audioAppStreamsResolver3 = _audioAppStreamsResolver;
                     if (audioAppStreamsResolver3 != null && !audioAppStreamsResolver3.SetApplicationStream(device, stream))
                     {
-                        Trace.TraceError($"OnApplicationStreamsSetEvent: Failed to set application stream {device.Name} {stream.Name} id:{stream.StreamID} source:{stream.Source} ouput:{stream.OutputMode}");
+                        Logger.Instance.Error($"OnApplicationStreamsSetEvent: Failed to set application stream {device.Name} {stream.Name} id:{stream.StreamID} source:{stream.Source} ouput:{stream.OutputMode}");
                     }
                     string key2 = stream.Name.ToLower();
                     if (_applicationStreamWorkAround.ContainsKey(key2))
@@ -280,22 +278,22 @@ namespace Synapse3.UserInteractive
                         if (applicationStream2 != null)
                         {
                             applicationStream2.OutputMode = stream.OutputMode;
-                            Trace.TraceInformation($"OnApplicationStreamsSetEvent Second stream found. Setting {applicationStream2.OutputMode} to {applicationStream2.Name} id:{applicationStream2.StreamID}");
+                            Logger.Instance.Debug($"OnApplicationStreamsSetEvent Second stream found. Setting {applicationStream2.OutputMode} to {applicationStream2.Name} id:{applicationStream2.StreamID}");
                             CRSy3_AudioAppStreamsWrapper audioAppStreamsResolver4 = _audioAppStreamsResolver;
                             if (audioAppStreamsResolver4 != null && !audioAppStreamsResolver4.SetApplicationStream(device, applicationStream2))
                             {
-                                Trace.TraceError($"OnApplicationStreamsSetEvent: Failed to set for second application stream {device.Name} {applicationStream2.Name} id:{applicationStream2.StreamID} source:{applicationStream2.Source} ouput:{applicationStream2.OutputMode}");
+                                Logger.Instance.Error($"OnApplicationStreamsSetEvent: Failed to set for second application stream {device.Name} {applicationStream2.Name} id:{applicationStream2.StreamID} source:{applicationStream2.Source} ouput:{applicationStream2.OutputMode}");
                             }
                         }
                     }
                 }
             }
-            Trace.TraceInformation("OnApplicationStreamsSetEvent END stream");
+            Logger.Instance.Debug("OnApplicationStreamsSetEvent END stream");
         }
 
         public void AudioApplicationStreamsChanged(long handle)
         {
-            Trace.TraceInformation($"AudioApplicationStreamsChanged {handle}");
+            Logger.Instance.Debug($"AudioApplicationStreamsChanged {handle}");
             this.AudioApplicationStreamsChangedEvent?.Invoke(handle);
             this.AudioApplicationStreamsChangedSREvent?.Invoke(handle);
             int index = _processedDeviceList.FindIndex((Device x) => x.Handle == handle);
@@ -313,7 +311,7 @@ namespace Synapse3.UserInteractive
 
         private void NotifyStreamChanged(long handle)
         {
-            Trace.TraceInformation($"NotifyStreamChanged {handle}");
+            Logger.Instance.Debug($"NotifyStreamChanged {handle}");
             _client.UpdateAppStream(handle);
         }
 
@@ -322,13 +320,13 @@ namespace Synapse3.UserInteractive
             Device device = streams.Device.Clone();
             if (_audioAppStreamsResolver?.Get(ref streams) ?? false)
             {
-                Trace.TraceInformation("UpdateApplicationStreams::Success!");
+                Logger.Instance.Debug("UpdateApplicationStreams::Success!");
             }
             else
             {
                 streams = new ApplicationStreams();
                 streams.ApplicationStreamList.Clear();
-                Trace.TraceError("UpdateApplicationStreams::Failed!");
+                Logger.Instance.Error("UpdateApplicationStreams::Failed!");
             }
             streams.Device = device;
             if (_cache.ContainsKey(streams.Device.Handle))
@@ -336,11 +334,11 @@ namespace Synapse3.UserInteractive
                 List<ApplicationStream> first = _cache[streams.Device.Handle];
                 if (first.SequenceEqual(streams.ApplicationStreamList))
                 {
-                    Trace.TraceInformation("UpdateApplicationStreams:: stream list already sent.");
+                    Logger.Instance.Debug("UpdateApplicationStreams:: stream list already sent.");
                     return;
                 }
             }
-            Trace.TraceInformation("UpdateApplicationStreams::Success!");
+            Logger.Instance.Debug("UpdateApplicationStreams::Success!");
             foreach (string item in FILTER)
             {
                 streams.ApplicationStreamList.RemoveAll((ApplicationStream x) => x.Name.ToLower().Contains(item));
@@ -348,7 +346,7 @@ namespace Synapse3.UserInteractive
             ApplicationStream riotclientservices = streams.ApplicationStreamList.FirstOrDefault((ApplicationStream x) => x.ExePath.ToLower().Contains(RIOTCLIENTSERVICES));
             if (riotclientservices != null)
             {
-                Trace.TraceInformation($"UpdateApplicationStreams:: {RIOTCLIENTSERVICES} found! Cloning.");
+                Logger.Instance.Debug($"UpdateApplicationStreams:: {RIOTCLIENTSERVICES} found! Cloning.");
                 ApplicationStream applicationStream = Serializer.DeepClone(riotclientservices);
                 if (applicationStream != null)
                 {
@@ -357,12 +355,12 @@ namespace Synapse3.UserInteractive
             }
             streams.ApplicationStreamList.RemoveAll((ApplicationStream x) => x.ExePath.ToLower().Contains(RIOTCLIENTSERVICES));
             string arg = string.Join(", ", streams.ApplicationStreamList.Select((ApplicationStream x) => x.Name + " id:" + x.StreamID + " source:" + x.Source + " output:" + x.OutputMode + " path:" + x.ExePath));
-            Trace.TraceInformation($"UpdateApplicationStreams::Sending {arg}");
+            Logger.Instance.Debug($"UpdateApplicationStreams::Sending {arg}");
             if (_client.SetAppStream(streams))
             {
                 _cache[streams.Device.Handle] = streams.ApplicationStreamList;
             }
-            Trace.TraceInformation("UpdateApplicationStreams::SetAppStream done.");
+            Logger.Instance.Debug("UpdateApplicationStreams::SetAppStream done.");
         }
     }
 }

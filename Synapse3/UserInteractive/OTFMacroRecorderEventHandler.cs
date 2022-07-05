@@ -1,6 +1,4 @@
-#define TRACE
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Threading;
 using System.Windows.Forms;
 using Contract.Common;
@@ -44,12 +42,12 @@ namespace Synapse3.UserInteractive
 
         private void _oftMacroRecorderEvent_StopOTFEvent(Device device, ref Macro macro)
         {
-            Trace.TraceInformation("_oftMacroRecorderEvent_StopOTFEvent - start");
+            Logger.Instance.Debug("_oftMacroRecorderEvent_StopOTFEvent - start");
             _backgroundWorker.CancelAsync();
             _recorder.ActiveDevice = device;
             bool flag = SpinWait.SpinUntil(() => _recorder.IsDone, -1);
             macro = (flag ? _recorder.GetMacro() : null);
-            Trace.TraceInformation($"_oftMacroRecorderEvent_StopOTFEvent result: {flag}  - end");
+            Logger.Instance.Debug($"_oftMacroRecorderEvent_StopOTFEvent result: {flag}  - end");
         }
 
         private void _oftMacroRecorderEvent_CancelOTFEvent(Device device)
@@ -60,7 +58,7 @@ namespace Synapse3.UserInteractive
 
         private void BackgroundWorker_DoWork(object sender, DoWorkEventArgs e)
         {
-            Trace.TraceInformation("BackgroundWorker_DoWork - start");
+            Logger.Instance.Debug("BackgroundWorker_DoWork - start");
             _recorder.Start();
             while (!_recorder.IsDone)
             {
@@ -70,7 +68,7 @@ namespace Synapse3.UserInteractive
                     _recorder.Stop(_isCancelled);
                 }
             }
-            Trace.TraceInformation("BackgroundWorker_DoWork - end");
+            Logger.Instance.Debug("BackgroundWorker_DoWork - end");
         }
     }
 }

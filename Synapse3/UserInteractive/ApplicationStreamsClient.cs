@@ -1,7 +1,5 @@
-#define TRACE
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Net.Http;
 using Contract.Audio.ApplicationStreamsLib;
 using Contract.Common;
@@ -34,7 +32,7 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"GetAppStreamDevices: Exception occured: {arg}");
+                Logger.Instance.Error($"GetAppStreamDevices: Exception occured: {arg}");
             }
             return null;
         }
@@ -57,12 +55,12 @@ namespace Synapse3.UserInteractive
             {
                 foreach (Exception innerException in ex.InnerExceptions)
                 {
-                    Trace.TraceError($"SetAppStream: AggregateException occured: {innerException}");
+                    Logger.Instance.Error($"SetAppStream: AggregateException occured: {innerException}");
                 }
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"SetAppStream: Exception occured: {arg}");
+                Logger.Instance.Error($"SetAppStream: Exception occured: {arg}");
             }
             return false;
         }
@@ -85,12 +83,12 @@ namespace Synapse3.UserInteractive
             {
                 foreach (Exception innerException in ex.InnerExceptions)
                 {
-                    Trace.TraceError($"SetAppStream: AggregateException occured: {innerException}");
+                    Logger.Instance.Error($"SetAppStream: AggregateException occured: {innerException}");
                 }
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"UpdateAppStream: Exception occured: {arg}");
+                Logger.Instance.Error($"UpdateAppStream: Exception occured: {arg}");
             }
             return false;
         }

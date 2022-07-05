@@ -1,6 +1,4 @@
-#define TRACE
 using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -121,7 +119,7 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"OnGetScreenRefreshRateListEvent: Exception occured: {arg}");
+                Logger.Instance.Error($"OnGetScreenRefreshRateListEvent: Exception occured: {arg}");
             }
             return false;
         }

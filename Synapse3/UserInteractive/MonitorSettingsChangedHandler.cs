@@ -1,7 +1,5 @@
-#define TRACE
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Timers;
 using System.Windows.Forms;
 using Common.Internal;
@@ -97,7 +95,7 @@ namespace Synapse3.UserInteractive
                 {
                     wrapper.Value.Dispose();
                 }
-                Trace.TraceInformation("SystemEvents_PowerModeChanged: middleware wrappers cleared.");
+                Logger.Instance.Debug("SystemEvents_PowerModeChanged: middleware wrappers cleared.");
                 _wrappers.Clear();
                 _devices.Clear();
             }
@@ -105,14 +103,14 @@ namespace Synapse3.UserInteractive
 
         private void ResetHandleTimer()
         {
-            Trace.TraceInformation($"ResetHandleTimer: HandleRefreshHandler will execute on {DateTime.Now.AddMilliseconds(_refreshHandleTimer.Interval)}");
+            Logger.Instance.Debug($"ResetHandleTimer: HandleRefreshHandler will execute on {DateTime.Now.AddMilliseconds(_refreshHandleTimer.Interval)}");
             _refreshHandleTimer.Stop();
             _refreshHandleTimer.Start();
         }
 
         private void HandleRefreshHandler(object sender, ElapsedEventArgs e)
         {
-            Trace.TraceInformation($"HandleRefreshHandler: Refreshing Handles count: {_wrappers.Count}");
+            Logger.Instance.Debug($"HandleRefreshHandler: Refreshing Handles count: {_wrappers.Count}");
             try
             {
                 lock (_lock)
@@ -128,16 +126,16 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"HandleRefreshHandler: Exception: {arg}");
+                Logger.Instance.Error($"HandleRefreshHandler: Exception: {arg}");
             }
-            Trace.TraceInformation("HandleRefreshHandler: Refresh done.");
+            Logger.Instance.Debug("HandleRefreshHandler: Refresh done.");
         }
 
         private void OnWndProcEvent(Message message)
         {
             if (message.Msg == 26 && message.WParam.ToInt32() == 47)
             {
-                Trace.TraceInformation("OnWndProcEvent: Received WM_SETTINGCHANGE & SPI_SETWORKAREA, Refreshing handles.");
+                Logger.Instance.Debug("OnWndProcEvent: Received WM_SETTINGCHANGE & SPI_SETWORKAREA, Refreshing handles.");
                 ResetHandleTimer();
             }
         }
@@ -162,7 +160,7 @@ namespace Synapse3.UserInteractive
         {
             lock (_lock)
             {
-                Trace.TraceInformation($"Wrapper: Enter cleanup? {bCleanUp}");
+                Logger.Instance.Debug($"Wrapper: Enter cleanup? {bCleanUp}");
                 if (bCleanUp)
                 {
                     if (_wrappers.ContainsKey(device.Handle))
@@ -173,10 +171,10 @@ namespace Synapse3.UserInteractive
                         }
                         _wrappers[device.Handle].Dispose();
                         _wrappers.Remove(device.Handle);
-                        Trace.TraceInformation($"Wrapper: {device.Product_ID} removed from collection.");
+                        Logger.Instance.Debug($"Wrapper: {device.Product_ID} removed from collection.");
                         return null;
                     }
-                    Trace.TraceWarning($"Wrapper: mw for {device.Product_ID} not found. Cleanup failed.");
+                    Logger.Instance.Warn($"Wrapper: mw for {device.Product_ID} not found. Cleanup failed.");
                     return null;
                 }
                 if (!_wrappers.ContainsKey(device.Handle))
@@ -186,19 +184,19 @@ namespace Synapse3.UserInteractive
                     if (!_wrappers[device.Handle].Initialise())
                     {
                         _wrappers.Remove(device.Handle);
-                        Trace.TraceError($"Wrapper: Initialise failed {device.Product_ID}. Undoing add.");
+                        Logger.Instance.Error($"Wrapper: Initialise failed {device.Product_ID}. Undoing add.");
                     }
                     else
                     {
-                        Trace.TraceInformation($"Wrapper: Added {device.Product_ID} to collection.");
+                        Logger.Instance.Debug($"Wrapper: Added {device.Product_ID} to collection.");
                     }
                 }
                 if (_wrappers.ContainsKey(device.Handle))
                 {
-                    Trace.TraceInformation($"Wrapper: Found mw instance for {device.Product_ID} from collection. Returning mw instance.");
+                    Logger.Instance.Debug($"Wrapper: Found mw instance for {device.Product_ID} from collection. Returning mw instance.");
                     return _wrappers[device.Handle];
                 }
-                Trace.TraceError($"Wrapper: mw instance for {device.Product_ID} now found in collection. Returning null.");
+                Logger.Instance.Error($"Wrapper: mw instance for {device.Product_ID} now found in collection. Returning null.");
                 return null;
             }
         }
@@ -640,8 +638,8 @@ namespace Synapse3.UserInteractive
         {
             lock (_lock)
             {
-                Trace.TraceInformation("MWSetImpl -Start-");
-                Trace.TraceInformation($"SET Info:: Device PID: {wrapper.PID}, Handle: {wrapper.Handle}, paramID: {paramId}");
+                Logger.Instance.Debug("MWSetImpl -Start-");
+                Logger.Instance.Debug($"SET Info:: Device PID: {wrapper.PID}, Handle: {wrapper.Handle}, paramID: {paramId}");
                 if (wrapper == null)
                 {
                     return false;
@@ -649,10 +647,10 @@ namespace Synapse3.UserInteractive
                 object paramValue = data;
                 if (!wrapper.SetParamValue(paramId, ref paramValue))
                 {
-                    Trace.TraceError($"MWSetImpl: Failed for paramId: {paramId}");
+                    Logger.Instance.Error($"MWSetImpl: Failed for paramId: {paramId}");
                     return false;
                 }
-                Trace.TraceInformation("MWSetImpl -End-");
+                Logger.Instance.Debug("MWSetImpl -End-");
                 return true;
             }
         }
@@ -661,8 +659,8 @@ namespace Synapse3.UserInteractive
         {
             lock (_lock)
             {
-                Trace.TraceInformation("MWGetImpl -Start-");
-                Trace.TraceInformation($"GET Info:: Device PID: {wrapper.PID}, Handle: {wrapper.Handle}, paramID: {paramId}");
+                Logger.Instance.Debug("MWGetImpl -Start-");
+                Logger.Instance.Debug($"GET Info:: Device PID: {wrapper.PID}, Handle: {wrapper.Handle}, paramID: {paramId}");
                 if (wrapper == null)
                 {
                     return false;
@@ -672,7 +670,7 @@ namespace Synapse3.UserInteractive
                 {
                     return false;
                 }
-                Trace.TraceInformation("MWGetImpl -End-");
+                Logger.Instance.Debug("MWGetImpl -End-");
                 return true;
             }
         }
@@ -682,7 +680,7 @@ namespace Synapse3.UserInteractive
             bool flag = false;
             try
             {
-                Trace.TraceInformation("RefreshMWWrapper: Enter retry");
+                Logger.Instance.Debug("RefreshMWWrapper: Enter retry");
                 if (_wrappers.ContainsKey(device.Handle))
                 {
                     if (_devices.ContainsKey(device.Handle))
@@ -700,18 +698,18 @@ namespace Synapse3.UserInteractive
                     {
                         _wrappers.Remove(device.Handle);
                     }
-                    Trace.TraceError($"RefreshMWWrapper: Initialise failed {device.Product_ID}. Undoing add.");
+                    Logger.Instance.Error($"RefreshMWWrapper: Initialise failed {device.Product_ID}. Undoing add.");
                     return flag;
                 }
                 flag = true;
                 _devices[device.Handle] = device;
-                Trace.TraceInformation($"RefreshMWWrapper: Added {device.Product_ID} to collection.");
+                Logger.Instance.Debug($"RefreshMWWrapper: Added {device.Product_ID} to collection.");
                 return flag;
             }
             catch (Exception arg)
             {
                 flag = false;
-                Trace.TraceError($"RefreshMWWrapper exception: {arg}");
+                Logger.Instance.Error($"RefreshMWWrapper exception: {arg}");
                 return flag;
             }
         }

@@ -41,6 +41,9 @@
     <Reference Include="Contract.Central">
       <HintPath>$(RazerServicePath)\Bin\Contract.Central.dll</HintPath>
     </Reference>
+    <Reference Include="NLog">
+      <HintPath>$(RazerUserProcessPath)\NLog.dll</HintPath>
+    </Reference>
     <Reference Include="RzCtl_ManagedWrapper">
       <HintPath>$(RazerServicePath)\Lib\ManagedWrapper\RzCtl_ManagedWrapper.dll</HintPath>
     </Reference>

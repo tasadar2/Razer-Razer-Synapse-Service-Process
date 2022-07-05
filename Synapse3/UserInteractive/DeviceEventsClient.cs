@@ -1,6 +1,4 @@
-#define TRACE
 using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Timers;
 using Contract.Audio.ApplicationStreamsLib;
@@ -102,13 +100,13 @@ namespace Synapse3.UserInteractive
         {
             if (await InitConnection())
             {
-                Trace.TraceInformation("DeviceEventsClient: Reconnected");
+                Logger.Instance.Debug("DeviceEventsClient: Reconnected");
             }
         }
 
         private void ResetConnectionTimer()
         {
-            Trace.TraceInformation("DeviceEventsClient: ResetConnectionTimer");
+            Logger.Instance.Debug("DeviceEventsClient: ResetConnectionTimer");
             _connectionTimer?.Stop();
             _connectionTimer.Start();
         }
@@ -267,7 +265,7 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception ex)
             {
-                Trace.TraceError($"InitConnection: {ex?.Message}");
+                Logger.Instance.Error($"InitConnection: {ex?.Message}");
             }
             if (_hub.Connection.State == ConnectionState.Connected)
             {
@@ -281,12 +279,12 @@ namespace Synapse3.UserInteractive
 
         private void Connection_StateChanged(StateChange obj)
         {
-            Trace.TraceInformation($"DeviceEventsClient: old {obj.OldState} new {obj.NewState}");
+            Logger.Instance.Debug($"DeviceEventsClient: old {obj.OldState} new {obj.NewState}");
         }
 
         private void Connection_Closed()
         {
-            Trace.TraceInformation("DeviceEventsClient: Disconnected, retrying to reconnect...");
+            Logger.Instance.Debug("DeviceEventsClient: Disconnected, retrying to reconnect...");
             ResetConnectionTimer();
         }
 

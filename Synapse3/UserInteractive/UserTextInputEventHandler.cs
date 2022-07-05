@@ -1,7 +1,5 @@
-#define TRACE
 using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -22,16 +20,17 @@ namespace Synapse3.UserInteractive
         public UserTextInputEventHandler(IUserTextEvent userTextEvent)
         {
             _userTextEvent = userTextEvent;
-            _userTextEvent.OnUserTextInputEvent += _userTextEvent_OnUserTextInputEvent;
+            _userTextEvent.OnUserTextInputEvent += OnUserTextInputEvent;
             _userTexts = new ConcurrentBag<string>();
         }
 
-        private void _userTextEvent_OnUserTextInputEvent(string text)
+        private void OnUserTextInputEvent(string text)
         {
             if (string.IsNullOrEmpty(text))
             {
                 return;
             }
+            Logger.Instance.Debug($"OnUserTextInputEvent: {text}");
             ConcurrentBag<string> userTexts = _userTexts;
             if (userTexts != null && !userTexts.Contains(text))
             {
@@ -52,7 +51,7 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"Exception occured. {arg}");
+                Logger.Instance.Error($"Exception occured. {arg}");
             }
         }
 
@@ -75,7 +74,19 @@ namespace Synapse3.UserInteractive
                 {
                     text2 = string.Copy(text3);
                 }
-                Clipboard.SetText(text);
+                if (!string.IsNullOrEmpty(text))
+                {
+                    for (int i = 1; i <= 3; i++)
+                    {
+                        Logger.Instance.Debug($"OnUserTextInputEvent: sending to clipboard {text} {i} # of tries");
+                        Clipboard.SetText(text);
+                        text3 = Clipboard.GetText();
+                        if (!string.IsNullOrEmpty(text3) && text.Equals(text3))
+                        {
+                            break;
+                        }
+                    }
+                }
                 SendKeys.SendWait("^v");
                 if (!string.IsNullOrEmpty(text2))
                 {
@@ -88,7 +99,7 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"Swap: Exception occured. {arg}");
+                Logger.Instance.Error($"Swap: Exception occured. {arg}");
             }
         }
 
@@ -101,7 +112,7 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"GetTextThreadProc: Exception occured. {arg}");
+                Logger.Instance.Error($"GetTextThreadProc: Exception occured. {arg}");
                 return string.Empty;
             }
         }
@@ -114,7 +125,7 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"SetTextThreadProc: Exception occured. {arg}");
+                Logger.Instance.Error($"SetTextThreadProc: Exception occured. {arg}");
             }
         }
 
@@ -126,7 +137,7 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"ClearThreadProc: Exception occured. {arg}");
+                Logger.Instance.Error($"ClearThreadProc: Exception occured. {arg}");
             }
         }
 

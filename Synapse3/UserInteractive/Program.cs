@@ -1,11 +1,8 @@
-#define TRACE
 using System;
 using System.Configuration;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Windows.Forms;
-using Microsoft.VisualBasic.Logging;
 
 namespace Synapse3.UserInteractive
 {
@@ -38,19 +35,12 @@ namespace Synapse3.UserInteractive
                 {
                 }
             }
-            SynapseProcessListener synapseProcessListener = new SynapseProcessListener(text);
-            synapseProcessListener.Location = LogFileLocation.Custom;
-            synapseProcessListener.BaseFileName = Path.GetFileNameWithoutExtension(text);
-            synapseProcessListener.CustomLocation = Path.GetDirectoryName(text);
-            synapseProcessListener.MaxFileSize = 1048576L;
-            Trace.Listeners.Add(synapseProcessListener);
-            Trace.AutoFlush = true;
-            Trace.TraceInformation("****************************Starting Synapse3 UserInteractive Process****************************");
+            Logger.Instance.Debug("****************************Starting Synapse3 UserInteractive Process****************************");
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(defaultValue: false);
             Application.Run(new HiddenForm());
             mutex.ReleaseMutex();
-            Trace.TraceInformation("****************************Synapse3 UserInteractive Process Stopped****************************");
+            Logger.Instance.Debug("****************************Synapse3 UserInteractive Process Stopped****************************");
         }
     }
 }

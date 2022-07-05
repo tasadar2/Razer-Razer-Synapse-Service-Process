@@ -1,6 +1,4 @@
-#define TRACE
 using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Synapse3.UserInteractive
@@ -25,7 +23,7 @@ namespace Synapse3.UserInteractive
         {
             if ((int)value < 0 || (int)value > 10)
             {
-                Trace.TraceError($"Invalid acceleration value: {(int)value}");
+                Logger.Instance.Error($"Invalid acceleration value: {(int)value}");
                 return;
             }
             int[] array = new int[3];
@@ -59,12 +57,12 @@ namespace Synapse3.UserInteractive
                 Marshal.Copy(array, 0, gCHandle.AddrOfPinnedObject(), array.Length);
                 if (!Win32PInvoke.SystemParametersInfo(Win32PInvoke.SPI.SPI_SETMOUSE, 0u, gCHandle.AddrOfPinnedObject(), Win32PInvoke.SPIF.SPIF_UPDATEINIFILE | Win32PInvoke.SPIF.SPIF_SENDCHANGE))
                 {
-                    Trace.TraceError($"Failed to set acceleration value: {(int)value}");
+                    Logger.Instance.Error($"Failed to set acceleration value: {(int)value}");
                 }
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"SetAccelerationLevel exception: {arg}");
+                Logger.Instance.Error($"SetAccelerationLevel exception: {arg}");
             }
             finally
             {
@@ -104,17 +102,17 @@ namespace Synapse3.UserInteractive
                     Marshal.Copy(array, 0, gCHandle.AddrOfPinnedObject(), array.Length);
                     if (!Win32PInvoke.SystemParametersInfo(Win32PInvoke.SPI.SPI_SETMOUSE, 0u, gCHandle.AddrOfPinnedObject(), Win32PInvoke.SPIF.SPIF_UPDATEINIFILE | Win32PInvoke.SPIF.SPIF_SENDCHANGE))
                     {
-                        Trace.TraceError($"Failed to enable/disable acceleration: {bEnabled}");
+                        Logger.Instance.Error($"Failed to enable/disable acceleration: {bEnabled}");
                     }
                 }
                 else
                 {
-                    Trace.TraceError($"SPI_GETMOUSE failed: {bEnabled}");
+                    Logger.Instance.Error($"SPI_GETMOUSE failed: {bEnabled}");
                 }
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"SetAccelerationState exception: {arg}");
+                Logger.Instance.Error($"SetAccelerationState exception: {arg}");
             }
             finally
             {

@@ -1,4 +1,3 @@
-#define TRACE
 using System;
 using System.Diagnostics;
 using System.Windows.Forms;
@@ -34,7 +33,7 @@ namespace Synapse3.UserInteractive
             _stopWatch = new Stopwatch();
             IsDone = false;
             _lastPressedKey = Keys.None;
-            Trace.TraceInformation("GlobalHook initialization - start");
+            Logger.Instance.Debug("GlobalHook initialization - start");
             if (_globalHook != null)
             {
                 _globalHook.KeyDownExt -= GlobalHook_KeyDownExt;
@@ -48,7 +47,7 @@ namespace Synapse3.UserInteractive
             _globalHook.KeyUpExt += GlobalHook_KeyUpExt;
             _globalHook.MouseDown += GlobalHook_MouseDown;
             _globalHook.MouseUp += GlobalHook_MouseUp;
-            Trace.TraceInformation("GlobalHook initialization - done");
+            Logger.Instance.Debug("GlobalHook initialization - done");
         }
 
         public void Stop(bool isCancelled)
@@ -60,7 +59,7 @@ namespace Synapse3.UserInteractive
             _globalHook.Dispose();
             if (isCancelled)
             {
-                Trace.TraceInformation("Macro Recording is cancelled. Clearing all temp macros");
+                Logger.Instance.Debug("Macro Recording is cancelled. Clearing all temp macros");
                 _tempMacro = null;
             }
             IsDone = true;

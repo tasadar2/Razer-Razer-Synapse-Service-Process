@@ -1,7 +1,5 @@
-#define TRACE
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
@@ -59,13 +57,13 @@ namespace Synapse3.UserInteractive
         {
             if (await InitConnection())
             {
-                Trace.TraceInformation("ApplicationEventsClient: Reconnected");
+                Logger.Instance.Debug("ApplicationEventsClient: Reconnected");
             }
         }
 
         private void ResetConnectionTimer()
         {
-            Trace.TraceInformation("ApplicationEventsClient: ResetConnectionTimer");
+            Logger.Instance.Debug("ApplicationEventsClient: ResetConnectionTimer");
             _connectionTimer?.Stop();
             _connectionTimer.Start();
         }
@@ -112,7 +110,7 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception ex)
             {
-                Trace.TraceError($"InitConnection: {ex?.Message}");
+                Logger.Instance.Error($"InitConnection: {ex?.Message}");
             }
             if (_hub.Connection.State == ConnectionState.Connected)
             {
@@ -126,12 +124,12 @@ namespace Synapse3.UserInteractive
 
         private void Connection_StateChanged(StateChange obj)
         {
-            Trace.TraceInformation($"ApplicationEventsClient: old {obj.OldState} new {obj.NewState}");
+            Logger.Instance.Debug($"ApplicationEventsClient: old {obj.OldState} new {obj.NewState}");
         }
 
         private void Connection_Closed()
         {
-            Trace.TraceInformation("ApplicationEventsClient: Disconnected, retrying to reconnect...");
+            Logger.Instance.Debug("ApplicationEventsClient: Disconnected, retrying to reconnect...");
             ResetConnectionTimer();
         }
 
@@ -145,12 +143,12 @@ namespace Synapse3.UserInteractive
                 }
                 else
                 {
-                    Trace.TraceError($"SetLasInputInfo: Connection state {_hub.Connection.State}");
+                    Logger.Instance.Error($"SetLasInputInfo: Connection state {_hub.Connection.State}");
                 }
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"SetLastInputInfo: Exception occured: {arg}");
+                Logger.Instance.Error($"SetLastInputInfo: Exception occured: {arg}");
             }
         }
 
@@ -164,12 +162,12 @@ namespace Synapse3.UserInteractive
                 }
                 else
                 {
-                    Trace.TraceError($"SetRegistryChangedInfo: Connection state {_hub.Connection.State}");
+                    Logger.Instance.Error($"SetRegistryChangedInfo: Connection state {_hub.Connection.State}");
                 }
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"SetRegistryChangedInfo: Exception occured: {arg}");
+                Logger.Instance.Error($"SetRegistryChangedInfo: Exception occured: {arg}");
             }
         }
 
@@ -183,12 +181,12 @@ namespace Synapse3.UserInteractive
                 }
                 else
                 {
-                    Trace.TraceError($"SetForegroundWindow: Connection state {_hub.Connection.State}");
+                    Logger.Instance.Error($"SetForegroundWindow: Connection state {_hub.Connection.State}");
                 }
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"SetForegroundWindow: Exception occured: {arg}");
+                Logger.Instance.Error($"SetForegroundWindow: Exception occured: {arg}");
             }
         }
 
@@ -202,12 +200,12 @@ namespace Synapse3.UserInteractive
                 }
                 else
                 {
-                    Trace.TraceError($"OnDisplayChange: Connection state {_hub.Connection.State}");
+                    Logger.Instance.Error($"OnDisplayChange: Connection state {_hub.Connection.State}");
                 }
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"OnDisplayChange: Exception occured: {arg}");
+                Logger.Instance.Error($"OnDisplayChange: Exception occured: {arg}");
             }
         }
 
@@ -220,7 +218,7 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"OnSendTextEventCompleted: Exception occured: {arg}");
+                Logger.Instance.Error($"OnSendTextEventCompleted: Exception occured: {arg}");
             }
         }
 
@@ -244,7 +242,7 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"SetForegroundWindowRect: Exception occured: {arg}");
+                Logger.Instance.Error($"SetForegroundWindowRect: Exception occured: {arg}");
             }
         }
 
@@ -258,7 +256,7 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"GetScreenRefreshRate: Exception occured: {arg}");
+                Logger.Instance.Error($"GetScreenRefreshRate: Exception occured: {arg}");
             }
         }
 
@@ -275,7 +273,7 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"SetScreenRefreshRate: Exception occured: {arg}");
+                Logger.Instance.Error($"SetScreenRefreshRate: Exception occured: {arg}");
             }
         }
 
@@ -289,19 +287,19 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"GetScreenRefreshRateList: Exception occured: {arg}");
+                Logger.Instance.Error($"GetScreenRefreshRateList: Exception occured: {arg}");
             }
         }
 
         private void _OnMacroStartOTF(Device device)
         {
-            Trace.TraceInformation("OnMacroStartOTF");
+            Logger.Instance.Debug("OnMacroStartOTF");
             this.StartOTFEvent?.Invoke(device);
         }
 
         private void _OnMacroStopOTF(Device device)
         {
-            Trace.TraceInformation("OnMacroStopOTF");
+            Logger.Instance.Debug("OnMacroStopOTF");
             new Thread((ThreadStart)delegate
             {
                 lock (_threadLock)
@@ -311,12 +309,12 @@ namespace Synapse3.UserInteractive
                     this.StopOTFEvent?.Invoke(device, ref macro);
                     try
                     {
-                        Trace.TraceInformation($"OnOTFMacroStopped: Macro data count {macro.MacroEvents.Count}");
+                        Logger.Instance.Debug($"OnOTFMacroStopped: Macro data count {macro.MacroEvents.Count}");
                         _hubProx?.Invoke("OnOTFMacroStopped", device2, macro);
                     }
                     catch (Exception arg)
                     {
-                        Trace.TraceError($"OnOTFMacroStopped: Exception occured: {arg}");
+                        Logger.Instance.Error($"OnOTFMacroStopped: Exception occured: {arg}");
                     }
                 }
             }).Start();
@@ -324,7 +322,7 @@ namespace Synapse3.UserInteractive
 
         private void _OnMacroCancelOTF(Device device)
         {
-            Trace.TraceInformation("OnMacroCancelOTF");
+            Logger.Instance.Debug("OnMacroCancelOTF");
             this.CancelOTFEvent?.Invoke(device);
         }
 
@@ -338,7 +336,7 @@ namespace Synapse3.UserInteractive
             }
             catch (Exception arg)
             {
-                Trace.TraceError($"SetDisplaySetting: Exception occured: {arg}");
+                Logger.Instance.Error($"SetDisplaySetting: Exception occured: {arg}");
             }
         }
 

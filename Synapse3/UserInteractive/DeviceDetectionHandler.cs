@@ -1,5 +1,3 @@
-#define TRACE
-using System.Diagnostics;
 using Contract.Central;
 using Synapse3UserInteractiveDeviceDetection.UserInteractive.UserInteractiveDeviceDetectionWrapper;
 
@@ -46,7 +44,7 @@ namespace Synapse3.UserInteractive
             if (!_bStarted)
             {
                 _bStarted = _deviceDetectionNative.Start();
-                Trace.TraceInformation($"DeviceDetectionNative Start returned {_bStarted}");
+                Logger.Instance.Debug($"DeviceDetectionNative Start returned {_bStarted}");
             }
         }
 
@@ -59,19 +57,19 @@ namespace Synapse3.UserInteractive
                 {
                     _bStarted = false;
                 }
-                Trace.TraceInformation($"DeviceDetectionNative Stop returned {flag}");
+                Logger.Instance.Debug($"DeviceDetectionNative Stop returned {flag}");
             }
         }
 
         private void DeviceAddedUserInteractive(uint pid, uint eid, long handle)
         {
-            Trace.TraceInformation($"DeviceDetectionHandler add sending {pid} {eid} {handle}");
+            Logger.Instance.Debug($"DeviceDetectionHandler add sending {pid} {eid} {handle}");
             _deviceDetectionClient?.SendDeviceAdded(pid, eid, handle);
         }
 
         private void DeviceRemovedUserInteractive(uint pid, uint eid, long handle)
         {
-            Trace.TraceInformation($"DeviceDetectionHandler remove sending {pid} {eid} {handle}");
+            Logger.Instance.Debug($"DeviceDetectionHandler remove sending {pid} {eid} {handle}");
             _deviceDetectionClient?.SendDeviceRemoved(pid, eid, handle);
         }
     }
